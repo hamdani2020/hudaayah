@@ -1,0 +1,100 @@
+# ──────────────────────────────────────────────────────────────
+# Secrets — NEVER commit these
+# ──────────────────────────────────────────────────────────────
+# Kiro MCP config holds a live Google OAuth bearer token (Stitch) +
+# other credentials. Keep it local only.
+.kiro/settings/mcp.json
+**/mcp.json
+
+# Environment / credential files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+*.p12
+*.keystore
+*.jks
+credentials.json
+service-account*.json
+google-services.json
+GoogleService-Info.plist
+
+# ──────────────────────────────────────────────────────────────
+# Python / Django (backend/)
+# ──────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.Python
+*.sqlite3
+*.sqlite3-journal
+db.sqlite3
+/backend/staticfiles/
+/backend/media/
+celerybeat-schedule
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ──────────────────────────────────────────────────────────────
+# Flutter / Dart (mobile/)
+# ──────────────────────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+**/doc/api/
+*.lock.g.dart
+.fvm/
+# iOS
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Runner/GeneratedPluginRegistrant.*
+# Android
+**/android/.gradle/
+**/android/local.properties
+**/android/key.properties
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+# macOS/Linux/Windows build artifacts
+**/macos/Flutter/ephemeral/
+**/linux/flutter/ephemeral/
+**/windows/flutter/ephemeral/
+
+# ──────────────────────────────────────────────────────────────
+# Node / tooling
+# ──────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ──────────────────────────────────────────────────────────────
+# Editor / OS
+# ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.log

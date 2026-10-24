@@ -1,0 +1,150 @@
+{
+  "name": "hudaayah",
+  "description": "Hudaayah project agent: Quran-only learning app (Flutter + Django + QF). Enforces QF Developer Terms, adab/respect rules, and the Al-Fatihah MVP scope.",
+  "prompt": "You are the Hudaayah engineering agent. Hudaayah is a Duolingo-style, Quran-only learning app. Core principle: Quran Foundation provides the Quran content; Hudaayah provides the learning experience. Always follow .kiro/steering/quran-content-rules.md: never hardcode or modify Quran text, keep QF client_secret server-side only, cache QF content at most 1 week, never use QF content for ML training, always credit Quran Foundation, and keep Quran text, translation, and original educational content clearly separated. Respect adab: no 'you failed' framing on Quran recall, no gamification implying religious superiority. Stay within the Al-Fatihah MVP scope (3 exercise types: multiple_choice, word_order, listening_recall). Server is authoritative for grading, XP, streak, and completion. Prefer the skills in .kiro/skills for QF adapter, Django, and Flutter conventions.",
+  "tools": [
+    "code",
+    "glob",
+    "grep",
+    "read",
+    "shell",
+    "write"
+  ],
+  "allowedTools": [
+    "read",
+    "grep",
+    "glob",
+    "code"
+  ],
+  "toolsSettings": {
+    "write": {
+      "allowedPaths": [
+        "backend/**",
+        "mobile/**",
+        "design/**",
+        ".kiro/**"
+      ]
+    },
+    "shell": {
+      "allowedCommands": [
+        "python3 -m venv .*",
+        "pip install .*",
+        "python manage.py .*",
+        "pytest.*",
+        "flutter .*",
+        "dart .*",
+        "git status",
+        "git diff.*"
+      ],
+      "deniedCommands": [
+        "rm -rf .*",
+        "git push .*--force.*",
+        "git reset --hard.*"
+      ],
+      "autoAllowReadonly": true
+    }
+  },
+  "resources": [
+    "file://.kiro/steering/**/*.md",
+    "file://.kiro/specs/**/*.md",
+    "file://design/stitch/**/*.md",
+    "skill://.kiro/skills/**/SKILL.md"
+  ],
+  "hooks": [
+    {
+      "name": "agentSpawn-0",
+      "trigger": "agentSpawn",
+      "action": {
+        "type": "command",
+        "command": "echo 'Hudaayah: Quran-only MVP. QF secret stays server-side; cache <= 1 week; no ML training on QF content; credit QF; respect adab.'"
+      },
+      "timeout": 10
+    },
+    {
+      "name": "preToolUse-0",
+      "trigger": "preToolUse",
+      "matcher": "write",
+      "action": {
+        "type": "command",
+        "command": "git diff --stat 2>/dev/null || true"
+      },
+      "timeout": 10
+    }
+  ],
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/hamdani/Projects/hudaayah/design",
+        "/Users/hamdani/Projects/hudaayah/.kiro"
+      ],
+      "timeout": 120000
+    },
+    "stitch": {
+      "url": "https://stitch.googleapis.com/mcp",
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer ${STITCH_ACCESS_TOKEN}",
+        "X-Goog-User-Project": "${STITCH_PROJECT_ID}"
+      },
+      "timeout": 120000
+    }
+  },
+  "keyboardShortcut": "ctrl+shift+h",
+  "welcomeMessage": "Hudaayah agent ready. Quran-only MVP, Al-Fatihah scope, QF terms + adab enforced.",
+  "permissions": {
+    "rules": [
+      {
+        "capability": "shell",
+        "match": [
+          "python3 -m venv *",
+          "pip install *",
+          "python manage*py *",
+          "pytest*",
+          "flutter *",
+          "dart *",
+          "git status",
+          "git diff*"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "rm -rf *",
+          "git push *--force*",
+          "git reset --hard*"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "backend/**",
+          "mobile/**",
+          "design/**",
+          ".kiro/**"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_read",
+        "effect": "allow"
+      },
+      {
+        "capability": "skill",
+        "effect": "allow"
+      }
+    ],
+    "policies": [
+      "read-only-shell"
+    ]
+  },
+  "kiroUpgrade": {
+    "revision": 2,
+    "fingerprint": "sha256:c078aa26fe759ba711b23b19d2bdc80ffa8620a15c26762e29cf08b1c38cbb57",
+    "source": "sha256:760892ef1726a1d6d1783b9798222d828699c12803bf4fb177610f8eac81d8d7"
+  }
+}
