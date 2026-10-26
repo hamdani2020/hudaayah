@@ -41,7 +41,7 @@ class HomeScreen extends ConsumerWidget {
                 _Header(name: name, streak: summary.streak,
                     onProfile: () => context.go('/profile')),
                 const SizedBox(height: 20),
-                _HabitCard(summary: summary, onContinue: () => context.go('/reader/1')),
+                _HabitCard(summary: summary, onContinue: () => context.go('/reader')),
                 const SizedBox(height: 16),
                 _DailyGoalCard(goal: summary.dailyGoal),
                 const SizedBox(height: 16),

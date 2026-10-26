@@ -11,6 +11,7 @@ import '../features/progress/presentation/home_screen.dart';
 import '../features/quran_reader/data/lesson_repository.dart';
 import '../features/quran_reader/presentation/reader_screen.dart';
 import '../features/review/presentation/review_session_screen.dart';
+import 'home_shell.dart';
 
 /// Bridges a Riverpod provider to a [Listenable] so GoRouter re-evaluates its
 /// redirect whenever auth state changes.
@@ -40,10 +41,9 @@ class _PracticeLoader extends ConsumerWidget {
   }
 }
 
-/// App router. Routes mirror the ui-spec screen map. Phase 2 wires
-/// /onboarding, /auth, and /profile with an auth-aware redirect. Remaining
-/// routes (/home, /lesson/:id, /reader/:surah, /exercise, /progress) land with
-/// their features.
+/// App router. Four main destinations (Home, Learn, Review, Profile) live in a
+/// persistent bottom-nav shell; onboarding/auth and full-screen flows (lesson
+/// practice) are top-level routes outside the shell.
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = _AuthRefresh(ref);
   ref.onDispose(refresh.dispose);
@@ -75,29 +75,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'auth',
         builder: (context, state) => const SignInScreen(),
       ),
-      GoRoute(
-        path: '/profile',
-        name: 'profile',
-        builder: (context, state) => const ProfileScreen(),
-      ),
-      GoRoute(
-        path: '/home',
-        name: 'home',
-        builder: (context, state) => const HomeScreen(),
-      ),
-      GoRoute(
-        path: '/review',
-        name: 'review',
-        builder: (context, state) => const ReviewSessionScreen(),
-      ),
-      GoRoute(
-        path: '/reader/:id',
-        name: 'reader',
-        builder: (context, state) {
-          final id = int.tryParse(state.pathParameters['id'] ?? '1') ?? 1;
-          return ReaderScreen(lessonId: id);
-        },
-      ),
+      // Full-screen lesson practice (no bottom nav while practising).
       GoRoute(
         path: '/lesson/:id/practice',
         name: 'practice',
@@ -105,6 +83,44 @@ final routerProvider = Provider<GoRouter>((ref) {
           final id = int.tryParse(state.pathParameters['id'] ?? '1') ?? 1;
           return _PracticeLoader(lessonId: id);
         },
+      ),
+      // Persistent bottom-nav shell for the four main destinations.
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            HomeShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/home',
+              name: 'home',
+              builder: (context, state) => const HomeScreen(),
+            ),
+          ]),
+          StatefulShellBranch(
+            initialLocation: '/reader',
+            routes: [
+              GoRoute(
+                path: '/reader',
+                name: 'reader',
+                builder: (context, state) => const ReaderScreen(lessonId: 1),
+              ),
+            ],
+          ),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/review',
+              name: 'review',
+              builder: (context, state) => const ReviewSessionScreen(),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/profile',
+              name: 'profile',
+              builder: (context, state) => const ProfileScreen(),
+            ),
+          ]),
+        ],
       ),
     ],
   );
