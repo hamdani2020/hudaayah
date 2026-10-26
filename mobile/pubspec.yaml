@@ -64,6 +64,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Onboarding hero illustration (design-mapping §3 / §6.3). Copied from
+  # design/stitch/screenshots/onboarding-hero.jpg.
+  assets:
+    - assets/images/onboarding-hero.jpg
+
   # Bundled Quran font for Arabic ayah rendering (quran-content-rules /
   # flutter-feature). Drop the licensed KFGQPC Uthmanic Hafs .ttf at
   # assets/fonts/UthmanicHafs.ttf, then UNCOMMENT the block below and run
