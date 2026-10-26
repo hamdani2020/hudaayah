@@ -50,6 +50,9 @@ htmlcov/
 # ──────────────────────────────────────────────────────────────
 # Flutter / Dart (mobile/)
 # ──────────────────────────────────────────────────────────────
+# dart-define config files — may hold env-specific client IDs / URLs.
+# Keep them local; commit a dev.json.example instead if you want a template.
+mobile/dart_defines/
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies

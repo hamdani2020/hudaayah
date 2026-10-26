@@ -5,3 +5,6 @@ psycopg[binary]==3.2.3
 django-environ==0.11.2
 requests==2.32.3
 gunicorn==23.0.0
+
+# Auth — verify Google ID tokens server-side (JWKS, iss/aud/exp checks)
+google-auth==2.37.0

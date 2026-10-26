@@ -98,6 +98,8 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+AUTH_USER_MODEL = "accounts.User"
+
 API_PREFIX = "api/v1/"
 
 REST_FRAMEWORK = {
@@ -128,6 +130,13 @@ _QF_HOSTS = {
 }
 QF_AUTH_BASE = _QF_HOSTS.get(QF_ENV, _QF_HOSTS["prelive"])["auth"]
 QF_API_BASE = _QF_HOSTS.get(QF_ENV, _QF_HOSTS["prelive"])["api"]
+
+# ── Social auth (verification is server-side; these are public client IDs) ────
+# The expected `aud` of Google ID tokens. Comma-separated to allow web/iOS/Android
+# client IDs that may differ per platform.
+GOOGLE_CLIENT_IDS = env.list("GOOGLE_CLIENT_IDS", default=[])
+# Apple is wired later (task 6.1); placeholder config kept for the provider layer.
+APPLE_CLIENT_IDS = env.list("APPLE_CLIENT_IDS", default=[])
 
 # Simple in-process cache is fine for the single-container MVP (token caching).
 CACHES = {

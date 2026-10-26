@@ -6,7 +6,8 @@ DEBUG = env.bool("DJANGO_DEBUG", default=True)
 
 ALLOWED_HOSTS = env.list(
     "DJANGO_ALLOWED_HOSTS",
-    default=["localhost", "127.0.0.1", "0.0.0.0", "web"],
+    # 10.0.2.2 = Android emulator's alias for the host machine.
+    default=["localhost", "127.0.0.1", "0.0.0.0", "web", "10.0.2.2"],
 )
 
 # Verbose, structured-ish logging in dev. Never log tokens/secrets.

@@ -8,5 +8,6 @@ api = settings.API_PREFIX
 urlpatterns = [
     path("admin/", admin.site.urls),
     path(f"{api}health/", include("apps.common.urls")),
+    path(f"{api}", include("apps.accounts.urls")),
     path(f"{api}", include("apps.quran_content.urls")),
 ]

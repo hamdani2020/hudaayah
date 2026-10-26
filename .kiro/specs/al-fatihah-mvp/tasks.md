@@ -16,10 +16,10 @@ requirements (Rn) in requirements.md.
       Al-Fatihah via Django.
 
 ## Phase 2 — Auth (Week 2)
-- [ ] 2.1 `User` model (multi-provider), migrations. (R1)
-- [ ] 2.2 Google ID-token verification + session issue/refresh/logout + `GET /me/`. (R1)
-- [ ] 2.3 Flutter Google Sign-In, secure token storage, Dio auth interceptor, profile. (R1)
-- [ ] Exit: sign in on a real device, fetch own profile.
+- [x] 2.1 `User` model (multi-provider), migrations. (R1)
+- [x] 2.2 Google ID-token verification + session issue/refresh/logout + `GET /me/`. (R1)
+- [x] 2.3 Flutter Google Sign-In, secure token storage, Dio auth interceptor, profile. (R1)
+- [x] Exit: sign in on a real device, fetch own profile.
 
 ## Phase 3 — Content + reader (Week 3)
 - [ ] 3.1 Seed loader for Al-Fatihah (references only, no verse text). (R2)
@@ -56,6 +56,10 @@ requirements (Rn) in requirements.md.
 - [ ] 6.5 Admin hardening: confirm only `is_staff` reaches admin, learner accounts never
       staff, no secrets/tokens rendered or logged in admin, destructive bulk actions off,
       `answer_key` not client-exposed. (R9)
+- [ ] 6.6 Google auth for pilot: add all testers as Test users OR publish the consent
+      screen (basic scopes publish without verification); add the **release** keystore /
+      Play App Signing SHA-1 as an Android OAuth client; production uses HTTPS + its own
+      `ALLOWED_HOSTS` (no cleartext config). See `docs/google-auth-setup.md`. (R1)
 - [ ] Exit: pilot checklist clean, no critical issues.
 
 ## Phase 7 — Pilot (Weeks 7–8)
