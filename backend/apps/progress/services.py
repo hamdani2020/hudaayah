@@ -89,4 +89,26 @@ def complete_attempt(*, attempt: LessonAttempt, idempotency_key: str) -> dict:
     activity.lessons_completed += 1
     activity.save(update_fields=["xp_earned", "lessons_completed"])
 
+    # Seed vocab review items for this lesson (idempotent per user+ref).
+    _ensure_vocab_reviews(attempt)
+
     return summary
+
+
+def _ensure_vocab_reviews(attempt: LessonAttempt) -> None:
+    """Create vocab review items from the lesson's exercises (R6).
+
+    Vocab is declared in an exercise's `config['vocab']` as a list of
+    {content_ref, prompt}. Creation is idempotent via the scheduler.
+    """
+    from apps.review.scheduler import ensure_item
+
+    for exercise in attempt.lesson.exercises.all():
+        for vocab in (exercise.config or {}).get("vocab", []):
+            ref = vocab.get("content_ref")
+            if ref:
+                ensure_item(
+                    attempt.user,
+                    content_ref=ref,
+                    prompt=vocab.get("prompt", ""),
+                )

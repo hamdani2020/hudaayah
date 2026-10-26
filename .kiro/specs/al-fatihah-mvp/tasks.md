@@ -42,11 +42,11 @@ requirements (Rn) in requirements.md.
 - [x] Exit: complete one lesson end-to-end; result persists after reopening.
 
 ## Phase 5 — Progress + habit (Week 5)
-- [ ] 5.1 Progress summary, XP, streak, daily activity. (R5)
-- [ ] 5.2 Vocab review scheduler (trimmed SM-2) + `GET /reviews/due/`. (R6)
-- [ ] 5.3 Flutter home/progress screen (streak + daily goal) + review session. (R5,R6)
-- [ ] 5.4 Duplicate-submission + transaction tests. (R5)
-- [ ] Exit: progress durable, user-specific, retry-safe.
+- [x] 5.1 Progress summary, XP, streak, daily activity. (R5)
+- [x] 5.2 Vocab review scheduler (trimmed SM-2) + `GET /reviews/due/`. (R6)
+- [x] 5.3 Flutter home/progress screen (streak + daily goal) + review session. (R5,R6)
+- [x] 5.4 Duplicate-submission + transaction tests. (R5)
+- [x] Exit: progress durable, user-specific, retry-safe.
 
 ## Phase 6 — Pilot readiness (Week 6)
 - [ ] 6.1 Apple Sign-In (iOS requirement alongside Google). (R1)

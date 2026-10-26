@@ -43,6 +43,10 @@
           {"id": "b", "text": "Power"},
           {"id": "c", "text": "Light"},
           {"id": "d", "text": "Patience"}
+        ],
+        "vocab": [
+          {"content_ref": "root:r-h-m", "prompt": "ر-ح-م — relates to?"},
+          {"content_ref": "root:h-m-d", "prompt": "ح-م-د — relates to?"}
         ]
       },
       "content_references": {"verse_key": "1:1"},

@@ -16,6 +16,7 @@ from .serializers import (
     SubmitAnswerResponseSerializer,
 )
 from .services import complete_attempt, start_attempt, submit_answer
+from .summary import daily_activity, progress_summary
 
 
 class NotFound(AppError):
@@ -113,3 +114,23 @@ class CompleteAttemptView(_OwnedAttemptMixin, APIView):
             attempt=attempt, idempotency_key=req.validated_data["idempotency_key"]
         )
         return Response(summary)
+
+
+class ProgressView(APIView):
+    """GET /progress/ — the user's own per-lesson progress + XP/streak/goal."""
+
+    authentication_classes = [BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(progress_summary(request.user))
+
+
+class DailyActivityView(APIView):
+    """GET /activity/daily/ — the user's own recent daily activity."""
+
+    authentication_classes = [BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({"activity": daily_activity(request.user)})

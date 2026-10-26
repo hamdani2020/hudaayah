@@ -7,8 +7,10 @@ import '../features/authentication/presentation/sign_in_screen.dart';
 import '../features/exercises/presentation/exercise_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
+import '../features/progress/presentation/home_screen.dart';
 import '../features/quran_reader/data/lesson_repository.dart';
 import '../features/quran_reader/presentation/reader_screen.dart';
+import '../features/review/presentation/review_session_screen.dart';
 
 /// Bridges a Riverpod provider to a [Listenable] so GoRouter re-evaluates its
 /// redirect whenever auth state changes.
@@ -59,7 +61,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final onAuthFlow = loc == '/auth' || loc == '/onboarding';
 
       if (!signedIn && !onAuthFlow) return '/auth';
-      if (signedIn && loc == '/auth') return '/profile';
+      if (signedIn && loc == '/auth') return '/home';
       return null;
     },
     routes: [
@@ -77,6 +79,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/profile',
         name: 'profile',
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/home',
+        name: 'home',
+        builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: '/review',
+        name: 'review',
+        builder: (context, state) => const ReviewSessionScreen(),
       ),
       GoRoute(
         path: '/reader/:id',
