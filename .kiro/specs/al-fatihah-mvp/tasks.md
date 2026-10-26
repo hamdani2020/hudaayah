@@ -4,15 +4,15 @@ Sequenced for a solo developer, ~6 build weeks + 2 pilot weeks. Each task maps t
 requirements (Rn) in requirements.md.
 
 ## Phase 1 — Foundation (Week 1)
-- [ ] 1.1 Scaffold Django (settings split, apps, requirements pinned) **in Docker**:
+- [x] 1.1 Scaffold Django (settings split, apps, requirements pinned) **in Docker**:
       `backend/Dockerfile` + `docker-compose.yml` (`web` + `db`), env via gitignored
       `.env`. No host venv. (R-tech)
-- [ ] 1.2 Add PostgreSQL as the Compose `db` service (`postgres:16`, named volume);
+- [x] 1.2 Add PostgreSQL as the Compose `db` service (`postgres:16`, named volume);
       run initial migrations via `docker compose exec web python manage.py migrate`. (R5)
-- [ ] 1.3 Implement `QuranFoundationClient` adapter: token cache, headers, 401 retry,
+- [x] 1.3 Implement `QuranFoundationClient` adapter: token cache, headers, 401 retry,
       error mapping, ≤1wk cache; hit pre-live `/chapters`. (R2)
-- [ ] 1.4 Scaffold Flutter (Riverpod, GoRouter, Dio, theme, bundled Quran font). (R-tech)
-- [ ] Exit: `docker compose up` boots web+db; QF token works; `/chapters` returns
+- [x] 1.4 Scaffold Flutter (Riverpod, GoRouter, Dio, theme, bundled Quran font). (R-tech)
+- [x] Exit: `docker compose up` boots web+db; QF token works; `/chapters` returns
       Al-Fatihah via Django.
 
 ## Phase 2 — Auth (Week 2)
