@@ -8,8 +8,10 @@ import '../features/exercises/presentation/exercise_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 import '../features/progress/presentation/home_screen.dart';
+import '../features/progress/presentation/lesson_completion_screen.dart';
 import '../features/quran_reader/data/lesson_repository.dart';
 import '../features/quran_reader/presentation/reader_screen.dart';
+import '../features/quran_reader/presentation/surah_selection_screen.dart';
 import '../features/review/presentation/review_session_screen.dart';
 import 'home_shell.dart';
 
@@ -84,6 +86,27 @@ final routerProvider = Provider<GoRouter>((ref) {
           return _PracticeLoader(lessonId: id);
         },
       ),
+      // Full-screen reader opened by selecting a surah / "Continue".
+      GoRoute(
+        path: '/reader/:id',
+        name: 'reader',
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '1') ?? 1;
+          return ReaderScreen(lessonId: id);
+        },
+      ),
+      // Full-screen lesson completion celebration; summary passed via `extra`.
+      GoRoute(
+        path: '/lesson/:id/complete',
+        name: 'lessonComplete',
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '1') ?? 1;
+          final summary = state.extra is Map<String, dynamic>
+              ? state.extra as Map<String, dynamic>
+              : null;
+          return LessonCompletionScreen(lessonId: id, summary: summary);
+        },
+      ),
       // Persistent bottom-nav shell for the four main destinations.
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -97,12 +120,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ]),
           StatefulShellBranch(
-            initialLocation: '/reader',
+            initialLocation: '/surah',
             routes: [
               GoRoute(
-                path: '/reader',
-                name: 'reader',
-                builder: (context, state) => const ReaderScreen(lessonId: 1),
+                path: '/surah',
+                name: 'surah',
+                builder: (context, state) => const SurahSelectionScreen(),
               ),
             ],
           ),
