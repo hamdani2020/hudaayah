@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../authentication/application/auth_controller.dart';
 
@@ -36,6 +37,12 @@ class ProfileScreen extends ConsumerWidget {
             ] else
               const Text('Not signed in.'),
             const Spacer(),
+            FilledButton.icon(
+              onPressed: () => context.go('/reader/1'),
+              icon: const Icon(Icons.menu_book),
+              label: const Text('Open Al-Fatihah'),
+            ),
+            const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () => ref.read(authControllerProvider.notifier).logout(),
               icon: const Icon(Icons.logout),

@@ -155,13 +155,19 @@ class QuranFoundationClient:
     def get_translation(self, verse_key: str, translation_id: int) -> dict:
         return self._cached_get(
             f"qf:tr:{translation_id}:{verse_key}",
-            f"quran/translations/{translation_id}",
-            {"verse_key": verse_key},
+            f"translations/{translation_id}/by_ayah/{verse_key}",
         )
 
     def get_word_by_word(self, verse_key: str) -> dict:
-        return self._cached_get(f"qf:wbw:{verse_key}", f"verses/by_key/{verse_key}",
-                                {"words": "true"})
+        return self._cached_get(
+            f"qf:wbw:{verse_key}",
+            f"verses/by_key/{verse_key}",
+            {
+                "words": "true",
+                "fields": "text_uthmani",
+                "word_fields": "text_uthmani,transliteration",
+            },
+        )
 
     def get_audio(self, verse_key: str, reciter_id: int) -> dict:
         return self._cached_get(

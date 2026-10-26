@@ -6,6 +6,7 @@ import '../features/authentication/application/auth_controller.dart';
 import '../features/authentication/presentation/sign_in_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
+import '../features/quran_reader/presentation/reader_screen.dart';
 
 /// Bridges a Riverpod provider to a [Listenable] so GoRouter re-evaluates its
 /// redirect whenever auth state changes.
@@ -55,6 +56,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/profile',
         name: 'profile',
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/reader/:id',
+        name: 'reader',
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '1') ?? 1;
+          return ReaderScreen(lessonId: id);
+        },
       ),
     ],
   );

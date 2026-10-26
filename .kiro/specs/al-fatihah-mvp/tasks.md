@@ -22,16 +22,16 @@ requirements (Rn) in requirements.md.
 - [x] Exit: sign in on a real device, fetch own profile.
 
 ## Phase 3 — Content + reader (Week 3)
-- [ ] 3.1 Seed loader for Al-Fatihah (references only, no verse text). (R2)
-- [ ] 3.2 `GET /lessons/{id}/` returning verse/translation/word-by-word/audio refs,
+- [x] 3.1 Seed loader for Al-Fatihah (references only, no verse text). (R2)
+- [x] 3.2 `GET /lessons/{id}/` returning verse/translation/word-by-word/audio refs,
       serving **published-only** content. (R2,R3,R9)
-- [ ] 3.3 Flutter Quran reader: Arabic RTL + translation + audio repeat/loop +
+- [x] 3.3 Flutter Quran reader: Arabic RTL + translation + audio repeat/loop +
       QF attribution. (R2,R3,R8)
-- [ ] 3.4 Content admin (Django admin): add `status` lifecycle
+- [x] 3.4 Content admin (Django admin): add `status` lifecycle
       (`draft|in_review|published|archived`) + `approved_by`/`approved_at` to Lesson &
       Exercise; register models; "Mark reviewed & publish" admin action that stamps the
       audit fields; QF fields rendered read-only. (R9)
-- [ ] Exit: Al-Fatihah renders correctly with audio on device; only published lessons are
+- [x] Exit: Al-Fatihah renders correctly with audio on device; only published lessons are
       served; a staff user can publish via admin and the audit stamp is recorded.
 
 ## Phase 4 — Exercises + grading (Week 4)

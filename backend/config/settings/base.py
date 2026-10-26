@@ -131,6 +131,9 @@ _QF_HOSTS = {
 QF_AUTH_BASE = _QF_HOSTS.get(QF_ENV, _QF_HOSTS["prelive"])["auth"]
 QF_API_BASE = _QF_HOSTS.get(QF_ENV, _QF_HOSTS["prelive"])["api"]
 
+# QF audio files are returned as paths relative to this CDN host.
+QF_AUDIO_CDN_BASE = env("QF_AUDIO_CDN_BASE", default="https://verses.quran.foundation")
+
 # ── Social auth (verification is server-side; these are public client IDs) ────
 # The expected `aud` of Google ID tokens. Comma-separated to allow web/iOS/Android
 # client IDs that may differ per platform.

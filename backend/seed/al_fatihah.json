@@ -1,0 +1,35 @@
+{
+  "_note": "References QF resources by stable ID only. NO Quran text is stored here (quran-content-rules). Text/audio is fetched at runtime via the QF adapter.",
+  "content_sources": [
+    {
+      "provider": "quran_foundation",
+      "resource_type": "translation",
+      "provider_ref": "85",
+      "language": "en",
+      "attribution": "M.A.S. Abdel Haleem",
+      "caching_policy_ref": "qf_max_1_week"
+    },
+    {
+      "provider": "quran_foundation",
+      "resource_type": "recitation",
+      "provider_ref": "7",
+      "language": "ar",
+      "attribution": "Mishary Rashid Alafasy",
+      "caching_policy_ref": "qf_max_1_week"
+    }
+  ],
+  "lesson": {
+    "title": "Surah Al-Fatihah",
+    "order": 1,
+    "objectives": [
+      "Listen to and read all 7 ayahs of Al-Fatihah",
+      "Understand the meaning word-by-word",
+      "Begin memorizing the surah"
+    ],
+    "surah": 1,
+    "ayah_start": 1,
+    "ayah_end": 7,
+    "translation_provider_ref": "85",
+    "recitation_provider_ref": "7"
+  }
+}

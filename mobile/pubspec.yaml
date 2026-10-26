@@ -40,6 +40,7 @@ dependencies:
   flutter_secure_storage: ^11.2.0
   google_fonts: ^8.2.1
   google_sign_in: ^7.2.0
+  just_audio: ^0.10.6
 
 dev_dependencies:
   flutter_test:
@@ -62,6 +63,17 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Bundled Quran font for Arabic ayah rendering (quran-content-rules /
+  # flutter-feature). Drop the licensed KFGQPC Uthmanic Hafs .ttf at
+  # assets/fonts/UthmanicHafs.ttf, then UNCOMMENT the block below and run
+  # `flutter pub get`. See assets/fonts/README.md. Until then, the ayah card's
+  # fontFamily:'UthmanicHafs' simply falls back to the default font (Arabic
+  # still renders correctly, just not in the Uthmani face).
+  # fonts:
+  #   - family: UthmanicHafs
+  #     fonts:
+  #       - asset: assets/fonts/UthmanicHafs.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:
