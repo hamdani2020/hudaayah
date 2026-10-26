@@ -56,9 +56,25 @@ the next day, with all progress server-authoritative.
 - THE SYSTEM SHALL keep QF `client_secret` server-side only.
 - THE SYSTEM SHALL NOT use QF content for ML training.
 
+### R9 Content administration & review
+- FOR the pilot, content administration SHALL be performed through the built-in Django
+  admin by a superuser/staff account; no custom admin UI is built for the pilot.
+- Lessons and exercises SHALL have an explicit status lifecycle
+  `draft → in_review → published` (plus `archived`), and THE SYSTEM SHALL serve only
+  `published` content to learners.
+- WHEN content moves to `published`, THE SYSTEM SHALL record who approved it and when
+  (`approved_by`, `approved_at`) as an audit trail.
+- A reviewer SHALL be able to view the resolved QF references (Arabic, translation,
+  word-by-word, audio) for a lesson read-only; THE SYSTEM SHALL NOT allow editing or
+  overriding QF Arabic text or translation through admin.
+- Admin actions SHALL be restricted to staff accounts and SHALL enforce object-level
+  rules; THE SYSTEM SHALL NOT log tokens/secrets in admin.
+
 ## 3. Out of scope
 Hadith, tafsir, AI tutor, Tajweed scoring, social, offline sync, multiple paths,
 levels/badges beyond XP+streak, surahs beyond Al-Fatihah.
+Custom/bespoke admin or content-authoring UI (pilot uses built-in Django admin);
+reviewer accounts for non-developers; analytics/support dashboards.
 
 ## 4. Definition of done (pilot)
 Google+Apple auth works on device; Al-Fatihah delivered via QF through Django; exercises

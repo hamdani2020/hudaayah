@@ -15,9 +15,12 @@ Modular monolith. QF accessed only from `apps/quran_content`.
 ## 2. Data model (key entities)
 - `User`: id, provider, provider_sub (unique together), display_name, email?, avatar,
   preferences, timestamps.
-- `Lesson`: id, title, order, objectives, surah=1, ayah_start, ayah_end, status.
+- `Lesson`: id, title, order, objectives, surah=1, ayah_start, ayah_end,
+  status(`draft|in_review|published|archived`), approved_by(fk User, null),
+  approved_at(null).
 - `Exercise`: id, lesson_fk, type, position, config(JSON), content_references(JSON),
-  answer_key(JSON, server-only), status.
+  answer_key(JSON, server-only), status(`draft|in_review|published|archived`),
+  approved_by(fk User, null), approved_at(null).
 - `LessonAttempt`: id, user_fk, lesson_fk, status, started_at, completed_at,
   score_summary, idempotency_key (unique).
 - `ExerciseAnswer`: id, attempt_fk, exercise_fk, submitted(JSON), correct(bool), ts.
@@ -62,3 +65,46 @@ Dio interceptor attaches access token + handles 401 refresh.
 ## 8. Compliance hooks
 Attribution widget on reader + settings; Privacy Policy + ToU screens; no Quran text in
 seed; cache TTL enforced in adapter.
+
+## 9. Runtime / deployment (Docker)
+The backend runs in Docker (Compose v2). Two services for MVP:
+```
+docker-compose.yml
+  web  -> Django/DRF (build: backend/Dockerfile), port 8000,
+          settings=config.settings.development, env_file=.env (gitignored)
+  db   -> postgres:16, named volume pgdata, reachable from web at host "db"
+```
+- Dev: `docker compose up --build`; API at `http://localhost:8000/api/v1/`.
+- Migrations / admin / tests run inside the container:
+  `docker compose exec web python manage.py <cmd>`.
+- DB host inside Compose is the service name `db` (not `localhost`); the port may be
+  published to the host for inspection.
+- Secrets (QF client id/secret, Django `SECRET_KEY`, DB creds, OAuth keys) come from the
+  gitignored `.env` injected via Compose — never baked into the image or committed.
+- Postgres data persists in the `pgdata` volume; back it up before destructive ops.
+- Production image uses `config.settings.production`, a WSGI server (e.g. gunicorn),
+  TLS termination upstream, and separate (non pre-live) QF credentials.
+
+## 10. Content administration & review (pilot = Django admin)
+Decision: for the pilot, admin is the **built-in Django admin** only — no custom UI.
+Anything bespoke (reviewer portal, dashboards, support tooling) is post-pilot backlog.
+
+- Access: staff/superuser accounts (`is_staff`). Create via
+  `docker compose exec web python manage.py createsuperuser`. Learner (Google/Apple)
+  accounts are never staff.
+- Registered models: `Lesson`, `Exercise`, `ContentSource`, and read-only views of
+  `User`, `LessonAttempt`, `UserProgress`, `DailyActivity`, `ReviewItem` for inspection.
+- Status lifecycle (enforced for Lesson + Exercise): `draft → in_review → published`,
+  plus `archived`. Learner-facing serializers/querysets return **only `published`**.
+- Audit: moving to `published` stamps `approved_by` (the acting staff user) and
+  `approved_at`. Implement as an admin action ("Mark reviewed & publish") so the stamp
+  and status change happen together.
+- QF content is **read-only** in admin: a reviewer can see resolved Arabic / translation /
+  word-by-word / audio (via the adapter) to verify accuracy, but admin SHALL NOT edit or
+  override QF Arabic or translation — only our own fields (title, order, hints, exercise
+  config, references by stable ID). This enforces the quran-content-rules content-layer
+  separation and immutability.
+- Safety: never expose `answer_key` edits in a way that ships to clients; never render or
+  log tokens/secrets in admin; destructive bulk actions are off by default.
+- This maps the required human-review workflow (quran-content-rules: draft → review →
+  QA → publication) onto admin without building new surfaces for the pilot.

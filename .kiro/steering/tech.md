@@ -8,6 +8,8 @@
 - Auth: Google Sign-In + Apple Sign-In. Django-managed application session.
 - Quran source: Quran Foundation Content API, accessed only from Django.
 - Architecture: modular monolith. No microservices/Kubernetes for MVP.
+- Runtime: **the backend runs in Docker** (Django + PostgreSQL via Docker Compose).
+  Containers are the source of truth for the dev environment — do not require a host venv.
 - CI/CD: GitHub Actions. Background jobs (Celery/Redis) only when a real need arises.
 
 ## Non-negotiable integration rules (from QF Developer Terms + quickstart)
@@ -40,6 +42,22 @@
 - Enforce object-level ownership on every user-owned endpoint.
 - Never log tokens, secrets, or raw provider errors. Use stable error codes + request IDs.
 
+## Docker / local runtime (backend)
+- Backend + Postgres run via `docker compose` (Compose v2 syntax, no hyphen). Files live
+  at `backend/Dockerfile` and `docker-compose.yml` (repo root or `backend/`).
+- Services: `web` (Django/DRF) and `db` (`postgres:16`). Add `redis`/`worker` only when a
+  real need arises — not for MVP.
+- Dev loop: `docker compose up --build`; app on `http://localhost:8000`,
+  Django settings `config.settings.development`.
+- Run management commands inside the container:
+  `docker compose exec web python manage.py migrate` /
+  `... createsuperuser` / `... test`.
+- Secrets come from env (`.env`, **gitignored**) injected via Compose `env_file` — never
+  baked into the image. Postgres data persists in a named volume.
+- `DATABASE_URL`/DB host inside Compose is the service name `db`, not `localhost`.
+- Pin Python in the Dockerfile; dependencies from `backend/requirements/*.txt`.
+  No host venv is required — the container is the environment.
+
 ## Mobile conventions
 - Feature-first folders under `lib/features/`. API calls behind repositories/services.
 - Widgets stay presentational; no progression/scoring logic in widgets.
@@ -49,4 +67,7 @@
 
 ## Local toolchain (verified 2026-10-24)
 Python 3.13.7, pip 25.2, Flutter 3.41.9, Dart 3.11.5, Node 24.11.1, git 2.50.1.
-Django is not yet installed — pin it in backend/requirements and use a venv.
+Backend Django + PostgreSQL run in **Docker** (Docker Desktop / Compose v2) — Python/pip
+on the host are only needed for incidental tooling, not for running the app. Flutter/Dart
+run on the host as usual. Django is not yet installed — pin it in `backend/requirements`
+and build it into the backend image.

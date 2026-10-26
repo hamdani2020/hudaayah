@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Backend runs in Docker",
+      "trigger": "SessionStart",
+      "description": "Reminds the agent that the Hudaayah backend (Django + PostgreSQL) runs via Docker Compose, with the canonical dev commands, so it never falls back to a host venv or bare runserver.",
+      "action": {
+        "type": "agent",
+        "prompt": "Backend runtime for this project is Docker (Docker Compose v2), NOT a host virtualenv.\n\nWhen scaffolding, running, migrating, or testing the Django backend:\n- Start the stack with `docker compose up --build` (services: `web` = Django/DRF on port 8000, `db` = postgres:16). API is at http://localhost:8000/api/v1/.\n- Run management commands inside the container, e.g. `docker compose exec web python manage.py migrate` / `createsuperuser` / `test`. Do NOT instruct the user to create or activate a host venv or run bare `python manage.py runserver`.\n- Inside Compose the database host is the service name `db`, not `localhost`.\n- Secrets come from a gitignored `.env` injected via Compose `env_file`; never bake secrets into the image or commit them.\n- Postgres data lives in a named volume (`pgdata`); warn before any destructive DB/volume operation.\n\nSee .kiro/steering/tech.md (\"Docker / local runtime\") and .kiro/specs/al-fatihah-mvp/design.md (§9 Runtime / deployment) for details."
+      }
+    }
+  ]
+}
