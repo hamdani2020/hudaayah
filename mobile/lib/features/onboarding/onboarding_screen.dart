@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/config/app_config.dart';
 
@@ -37,7 +38,7 @@ class OnboardingScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: () {},
+                  onPressed: () => context.go('/auth'),
                   child: const Text("Get Started — It's Free"),
                 ),
               ),

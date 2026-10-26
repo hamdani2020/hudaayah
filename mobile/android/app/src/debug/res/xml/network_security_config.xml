@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DEBUG ONLY. Permits cleartext HTTP to the local dev backend so the app can
+  reach Django at http://10.0.2.2:8000 (emulator) / localhost during development.
+  This file lives in the `debug` source set, so release builds are unaffected
+  and continue to disallow cleartext traffic by default.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Android emulator alias for the host machine's localhost -->
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>
