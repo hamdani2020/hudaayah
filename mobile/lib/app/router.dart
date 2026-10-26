@@ -1,11 +1,13 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/authentication/application/auth_controller.dart';
 import '../features/authentication/presentation/sign_in_screen.dart';
+import '../features/exercises/presentation/exercise_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
+import '../features/quran_reader/data/lesson_repository.dart';
 import '../features/quran_reader/presentation/reader_screen.dart';
 
 /// Bridges a Riverpod provider to a [Listenable] so GoRouter re-evaluates its
@@ -15,6 +17,25 @@ class _AuthRefresh extends ChangeNotifier {
     _ref.listen(authControllerProvider, (_, next) => notifyListeners());
   }
   final Ref _ref;
+}
+
+/// Loads a lesson, then shows its exercise session. Keeps the practice route
+/// decoupled from how the lesson is fetched.
+class _PracticeLoader extends ConsumerWidget {
+  const _PracticeLoader({required this.lessonId});
+  final int lessonId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lessonAsync = ref.watch(lessonProvider(lessonId));
+    return lessonAsync.when(
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (e, _) =>
+          const Scaffold(body: Center(child: Text('Could not load practice.'))),
+      data: (lesson) => ExerciseScreen(lesson: lesson),
+    );
+  }
 }
 
 /// App router. Routes mirror the ui-spec screen map. Phase 2 wires
@@ -63,6 +84,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = int.tryParse(state.pathParameters['id'] ?? '1') ?? 1;
           return ReaderScreen(lessonId: id);
+        },
+      ),
+      GoRoute(
+        path: '/lesson/:id/practice',
+        name: 'practice',
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '1') ?? 1;
+          return _PracticeLoader(lessonId: id);
         },
       ),
     ],

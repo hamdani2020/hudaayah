@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/api_exception.dart';
 import '../application/audio_controller.dart';
@@ -58,6 +59,14 @@ class ReaderScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(16),
                 children: [
                   for (final ayah in lesson.ayahs) AyahCard(ayah: ayah),
+                  if (lesson.exercises.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    FilledButton.icon(
+                      onPressed: () => context.go('/lesson/${lesson.id}/practice'),
+                      icon: const Icon(Icons.quiz),
+                      label: const Text('Practice this lesson'),
+                    ),
+                  ],
                 ],
               ),
             ),

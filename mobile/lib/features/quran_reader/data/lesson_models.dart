@@ -1,3 +1,5 @@
+import '../../exercises/data/exercise_models.dart';
+
 /// DTOs for the `/lessons/{id}/` response.
 ///
 /// Content layers are kept distinct (quran-content-rules): [arabic] is the
@@ -51,6 +53,7 @@ class Lesson {
   final int ayahEnd;
   final List<String> objectives;
   final List<Ayah> ayahs;
+  final List<Exercise> exercises;
   final String attribution;
 
   const Lesson({
@@ -61,6 +64,7 @@ class Lesson {
     required this.ayahEnd,
     required this.objectives,
     required this.ayahs,
+    required this.exercises,
     required this.attribution,
   });
 
@@ -75,6 +79,9 @@ class Lesson {
       objectives: ((j['objectives'] as List?) ?? []).cast<String>(),
       ayahs: ((content['ayahs'] as List?) ?? [])
           .map((a) => Ayah.fromJson((a as Map).cast<String, dynamic>()))
+          .toList(),
+      exercises: ((j['exercises'] as List?) ?? [])
+          .map((e) => Exercise.fromJson((e as Map).cast<String, dynamic>()))
           .toList(),
       attribution: content['attribution'] as String? ?? '',
     );
