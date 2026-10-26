@@ -35,11 +35,11 @@ requirements (Rn) in requirements.md.
       served; a staff user can publish via admin and the audit stamp is recorded.
 
 ## Phase 4 — Exercises + grading (Week 4)
-- [ ] 4.1 Exercise model + seed for 3 types. (R4)
-- [ ] 4.2 Attempt endpoints + server-side grading + gentle feedback. (R4)
-- [ ] 4.3 Completion transaction + idempotency key. (R5)
-- [ ] 4.4 Flutter renderers for multiple_choice, word_order, listening_recall. (R4)
-- [ ] Exit: complete one lesson end-to-end; result persists after reopening.
+- [x] 4.1 Exercise model + seed for 3 types. (R4)
+- [x] 4.2 Attempt endpoints + server-side grading + gentle feedback. (R4)
+- [x] 4.3 Completion transaction + idempotency key. (R5)
+- [x] 4.4 Flutter renderers for multiple_choice, word_order, listening_recall. (R4)
+- [x] Exit: complete one lesson end-to-end; result persists after reopening.
 
 ## Phase 5 — Progress + habit (Week 5)
 - [ ] 5.1 Progress summary, XP, streak, daily activity. (R5)

@@ -31,5 +31,47 @@
     "ayah_end": 7,
     "translation_provider_ref": "85",
     "recitation_provider_ref": "7"
-  }
+  },
+  "exercises": [
+    {
+      "type": "multiple_choice",
+      "position": 1,
+      "config": {
+        "prompt": "What does the root ر-ح-م (r-ḥ-m) relate to?",
+        "options": [
+          {"id": "a", "text": "Mercy"},
+          {"id": "b", "text": "Power"},
+          {"id": "c", "text": "Light"},
+          {"id": "d", "text": "Patience"}
+        ]
+      },
+      "content_references": {"verse_key": "1:1"},
+      "answer_key": {"correct_option_id": "a"}
+    },
+    {
+      "type": "word_order",
+      "position": 2,
+      "config": {
+        "prompt": "Arrange the words of ayah 1:1 in the correct order.",
+        "tokens": [
+          {"id": "t1", "text": "بِسْمِ"},
+          {"id": "t2", "text": "ٱللَّهِ"},
+          {"id": "t3", "text": "ٱلرَّحْمَٰنِ"},
+          {"id": "t4", "text": "ٱلرَّحِيمِ"}
+        ]
+      },
+      "content_references": {"verse_key": "1:1"},
+      "answer_key": {"correct_order": ["t1", "t2", "t3", "t4"]}
+    },
+    {
+      "type": "listening_recall",
+      "position": 3,
+      "config": {
+        "prompt": "Listen to ayah 1:2 and recite it from memory, then mark how you did.",
+        "verse_key": "1:2"
+      },
+      "content_references": {"verse_key": "1:2", "recitation_provider_ref": "7"},
+      "answer_key": {}
+    }
+  ]
 }

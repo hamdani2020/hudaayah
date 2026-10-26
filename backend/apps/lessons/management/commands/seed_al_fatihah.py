@@ -17,6 +17,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.common.lifecycle import ContentStatus
+from apps.exercises.models import Exercise
 from apps.lessons.models import ContentSource, Lesson
 
 
@@ -72,8 +73,27 @@ class Command(BaseCommand):
             lesson.approved_at = timezone.now()
             lesson.save(update_fields=["status", "approved_at"])
 
+        # Exercises (idempotent per lesson+position).
+        ex_count = 0
+        for ex in data.get("exercises", []):
+            exercise, _ = Exercise.objects.update_or_create(
+                lesson=lesson,
+                position=ex["position"],
+                defaults={
+                    "type": ex["type"],
+                    "config": ex.get("config", {}),
+                    "content_references": ex.get("content_references", {}),
+                    "answer_key": ex.get("answer_key", {}),
+                },
+            )
+            if options["publish"]:
+                exercise.status = ContentStatus.PUBLISHED
+                exercise.approved_at = timezone.now()
+                exercise.save(update_fields=["status", "approved_at"])
+            ex_count += 1
+
         verb = "Created" if created else "Updated"
         self.stdout.write(self.style.SUCCESS(
             f"{verb} lesson '{lesson.title}' (id={lesson.id}, status={lesson.status}); "
-            f"{len(sources_by_ref)} content source(s)."
+            f"{len(sources_by_ref)} content source(s); {ex_count} exercise(s)."
         ))
