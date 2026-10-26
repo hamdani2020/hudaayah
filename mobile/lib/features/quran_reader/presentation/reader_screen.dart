@@ -33,15 +33,6 @@ class ReaderScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Al-Fatihah'),
-        actions: [
-          // Repeat/loop toggle — core memorization aid.
-          IconButton(
-            tooltip: audio.looping ? 'Loop on' : 'Loop off',
-            icon: Icon(audio.looping ? Icons.repeat_one : Icons.repeat),
-            color: audio.looping ? theme.colorScheme.primary : null,
-            onPressed: () => ref.read(audioControllerProvider.notifier).toggleLoop(),
-          ),
-        ],
       ),
       body: lessonAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -54,6 +45,11 @@ class ReaderScreen extends ConsumerWidget {
         },
         data: (lesson) => Column(
           children: [
+            _ReciterStrip(
+              looping: audio.looping,
+              onToggleLoop: () =>
+                  ref.read(audioControllerProvider.notifier).toggleLoop(),
+            ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(16),
@@ -84,6 +80,42 @@ class ReaderScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Sticky audio strip — reciter label + loop/repeat toggle (design's audio bar).
+class _ReciterStrip extends StatelessWidget {
+  const _ReciterStrip({required this.looping, required this.onToggleLoop});
+  final bool looping;
+  final VoidCallback onToggleLoop;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: theme.colorScheme.surfaceContainerLow,
+      child: Row(
+        children: [
+          Icon(Icons.mic, size: 18, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text('Mishary Rashid Alafasy • Ayah 1–7',
+                style: theme.textTheme.labelMedium),
+          ),
+          TextButton.icon(
+            onPressed: onToggleLoop,
+            icon: Icon(looping ? Icons.repeat_one : Icons.repeat,
+                size: 18,
+                color: looping ? theme.colorScheme.secondary : null),
+            label: Text('Loop',
+                style: TextStyle(
+                    color: looping ? theme.colorScheme.secondary : null)),
+          ),
+        ],
       ),
     );
   }

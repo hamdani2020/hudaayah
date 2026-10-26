@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hudaayah/app/app.dart';
@@ -32,8 +33,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // Hero is above the fold.
     expect(find.text('Hudaayah'), findsOneWidget);
-    expect(find.textContaining('Quran Foundation'), findsOneWidget);
-    expect(find.text("Get Started — It's Free"), findsOneWidget);
+    expect(find.textContaining('Build a Heartfelt'), findsOneWidget);
+
+    final scrollable = find.byType(Scrollable).first;
+
+    // CTA and attribution are further down the scroll view.
+    final cta = find.text("Get Started — It's Free");
+    await tester.scrollUntilVisible(cta, 300, scrollable: scrollable);
+    expect(cta, findsOneWidget);
+
+    final attribution = find.textContaining('Quran Foundation');
+    await tester.scrollUntilVisible(attribution, 300, scrollable: scrollable);
+    expect(attribution, findsOneWidget);
   });
 }
