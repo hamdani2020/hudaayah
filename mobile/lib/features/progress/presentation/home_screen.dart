@@ -3,15 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/config/app_config.dart';
+import '../../../core/widgets/hudaayah_top_bar.dart';
 import '../../authentication/application/auth_controller.dart';
 import '../../review/data/review_repository.dart';
 import '../data/progress_models.dart';
 import '../data/progress_repository.dart';
+import 'widgets/habit_card.dart';
+import 'widgets/lesson_journey_tile.dart';
 
-/// Home Dashboard — matches the Stitch home screen (in-scope parts): greeting,
-/// streak badge, "Today's Sacred Habit" card with progress + Continue, daily
-/// goal, and the learning journey list. Out-of-scope widgets from the mockup
-/// ("Word of the Day", Adhkar reminder) are intentionally omitted.
+/// Home Dashboard — matches the Stitch home screen (04): fixed top bar + streak
+/// chip, greeting, the "Today's Sacred Habit" card with an honest progress ring
+/// and "Continue Reading", the learning journey list, and the QF attribution.
+/// Out-of-scope mockup widgets with no data source ("Word of the Day", live
+/// Hijri date, Adhkar reminder) are intentionally omitted. Presentational: all
+/// provider/controller wiring is preserved.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -24,58 +30,85 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(progressSummaryProvider);
-            ref.invalidate(dueReviewsProvider);
-            await ref.read(progressSummaryProvider.future);
-          },
-          child: summaryAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, _) => _CenteredRetry(
-              onRetry: () => ref.invalidate(progressSummaryProvider),
-            ),
-            data: (summary) => ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                _Header(name: name, streak: summary.streak,
-                    onProfile: () => context.go('/profile')),
-                const SizedBox(height: 20),
-                _HabitCard(summary: summary, onContinue: () => context.go('/reader/1')),
-                const SizedBox(height: 16),
-                _DailyGoalCard(goal: summary.dailyGoal),
-                const SizedBox(height: 16),
-                dueAsync.maybeWhen(
-                  data: (items) => items.isEmpty
-                      ? const SizedBox.shrink()
-                      : Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: OutlinedButton.icon(
-                            onPressed: () => context.go('/review'),
-                            icon: const Icon(Icons.schedule),
-                            label: Text('Review ${items.length} word'
-                                '${items.length == 1 ? '' : 's'}'),
-                          ),
+        child: summaryAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, _) => _CenteredRetry(
+            onRetry: () => ref.invalidate(progressSummaryProvider),
+          ),
+          data: (summary) => Column(
+            children: [
+              HudaayahTopBar(tab: 'Home', streakDays: summary.streak),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(progressSummaryProvider);
+                    ref.invalidate(dueReviewsProvider);
+                    await ref.read(progressSummaryProvider.future);
+                  },
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                    children: [
+                      _Greeting(name: name),
+                      const SizedBox(height: 20),
+                      HabitCard(
+                        title: 'Surah Al-Fatihah',
+                        subtitle: 'Ayah 1–7 • The Opening',
+                        percent: _habitPercent(summary),
+                        buttonLabel: _habitDone(summary)
+                            ? 'Review Al-Fatihah'
+                            : 'Continue Reading',
+                        onContinue: () => context.go('/reader/1'),
+                      ),
+                      const SizedBox(height: 16),
+                      dueAsync.maybeWhen(
+                        data: (items) => items.isEmpty
+                            ? const SizedBox.shrink()
+                            : Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: OutlinedButton.icon(
+                                  onPressed: () => context.go('/review'),
+                                  icon: const Icon(Icons.schedule),
+                                  label: Text('Review ${items.length} word'
+                                      '${items.length == 1 ? '' : 's'}'),
+                                ),
+                              ),
+                        orElse: () => const SizedBox.shrink(),
+                      ),
+                      Text('Your Learning Journey',
+                          style: theme.textTheme.headlineSmall
+                              ?.copyWith(color: AppTheme.primary)),
+                      const SizedBox(height: 10),
+                      _JourneyList(lessons: summary.lessons),
+                      const SizedBox(height: 24),
+                      Center(
+                        child: Text(
+                          AppConfig.qfAttribution,
+                          style: theme.textTheme.labelSmall,
+                          textAlign: TextAlign.center,
                         ),
-                  orElse: () => const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
                 ),
-                Text('Your Learning Journey', style: theme.textTheme.titleMedium),
-                const SizedBox(height: 8),
-                _JourneyList(lessons: summary.lessons),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+
+  static bool _habitDone(ProgressSummary summary) =>
+      summary.lessons.isNotEmpty && summary.lessons.first.isCompleted;
+
+  // Honest completion fraction: 100% if the first lesson is completed, else 0%.
+  static double _habitPercent(ProgressSummary summary) =>
+      _habitDone(summary) ? 1.0 : 0.0;
 }
 
-class _Header extends StatelessWidget {
-  const _Header({required this.name, required this.streak, required this.onProfile});
+class _Greeting extends StatelessWidget {
+  const _Greeting({required this.name});
   final String name;
-  final int streak;
-  final VoidCallback onProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -83,144 +116,15 @@ class _Header extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _StreakBadge(streak: streak),
-            IconButton(
-              icon: const Icon(Icons.person_outline),
-              onPressed: onProfile,
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
         Text(
           name.isEmpty ? 'Assalamu Alaikum' : 'Assalamu Alaikum, $name',
-          style: theme.textTheme.displaySmall,
+          style: theme.textTheme.displaySmall?.copyWith(color: AppTheme.primary),
         ),
         const SizedBox(height: 4),
         Text('May your recitation bring tranquil light today.',
             style: theme.textTheme.bodyMedium
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
       ],
-    );
-  }
-}
-
-class _StreakBadge extends StatelessWidget {
-  const _StreakBadge({required this.streak});
-  final int streak;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppTheme.secondaryFixed,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.local_fire_department,
-              size: 18, color: theme.colorScheme.secondary),
-          const SizedBox(width: 6),
-          Text('${streak}d streak',
-              style: theme.textTheme.labelMedium
-                  ?.copyWith(color: theme.colorScheme.secondary)),
-        ],
-      ),
-    );
-  }
-}
-
-class _HabitCard extends StatelessWidget {
-  const _HabitCard({required this.summary, required this.onContinue});
-  final ProgressSummary summary;
-  final VoidCallback onContinue;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final fatiha = summary.lessons.isNotEmpty ? summary.lessons.first : null;
-    final done = fatiha?.isCompleted ?? false;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(AppTheme.radiusXl),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Today's Sacred Habit",
-              style: theme.textTheme.labelMedium
-                  ?.copyWith(color: AppTheme.onPrimaryContainer)),
-          const SizedBox(height: 6),
-          Text('Surah Al-Fatihah',
-              style: theme.textTheme.headlineSmall?.copyWith(color: AppTheme.onPrimary)),
-          Text('Ayah 1 – 7 • The Opening',
-              style: theme.textTheme.bodyMedium?.copyWith(color: AppTheme.onPrimaryContainer)),
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: done ? 1.0 : 0.0,
-              backgroundColor: AppTheme.primary,
-              minHeight: 8,
-            ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppTheme.secondaryContainer,
-              foregroundColor: AppTheme.onSecondary,
-            ),
-            onPressed: onContinue,
-            child: Text(done ? 'Review Al-Fatihah' : 'Continue'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DailyGoalCard extends StatelessWidget {
-  const _DailyGoalCard({required this.goal});
-  final DailyGoal goal;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Today's goal", style: theme.textTheme.titleMedium),
-                Text('${goal.earnedXp}/${goal.goalXp} XP',
-                    style: theme.textTheme.labelMedium),
-              ],
-            ),
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(value: goal.fraction, minHeight: 8),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              goal.met ? 'Goal met — baarak Allahu feek!' : 'Keep going, almost there.',
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -241,22 +145,19 @@ class _JourneyList extends StatelessWidget {
         ),
       );
     }
-    return Card(
-      child: Column(
-        children: [
-          for (final l in lessons)
-            ListTile(
-              leading: Icon(
-                l.isCompleted ? Icons.check_circle : Icons.auto_stories,
-                color: l.isCompleted
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.secondary,
-              ),
-              title: Text('Surah Al-Fatihah', style: theme.textTheme.titleMedium),
-              subtitle: Text(l.isCompleted ? 'Completed' : 'In progress'),
-            ),
+    return Column(
+      children: [
+        for (final l in lessons) ...[
+          LessonJourneyTile(
+            title: 'Surah Al-Fatihah',
+            subtitle: l.isCompleted
+                ? 'Foundation & Word Meanings'
+                : 'Word Meanings & Practice',
+            completed: l.isCompleted,
+          ),
+          const SizedBox(height: 8),
         ],
-      ),
+      ],
     );
   }
 }

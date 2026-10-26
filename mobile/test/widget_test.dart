@@ -33,19 +33,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Hero is above the fold.
+    // Redesigned onboarding (design-mapping §2 screen 01): the "Hudaayah"
+    // wordmark, the new headline/subtitle, the "Get started" pill CTA, and a
+    // "Sign in" link. The Basmala, pillar cards, and onboarding QF attribution
+    // were removed in the redesign (attribution now lives on content screens).
     expect(find.text('Hudaayah'), findsOneWidget);
-    expect(find.textContaining('Build a Heartfelt'), findsOneWidget);
-
-    final scrollable = find.byType(Scrollable).first;
-
-    // CTA and attribution are further down the scroll view.
-    final cta = find.text("Get Started — It's Free");
-    await tester.scrollUntilVisible(cta, 300, scrollable: scrollable);
-    expect(cta, findsOneWidget);
-
-    final attribution = find.textContaining('Quran Foundation');
-    await tester.scrollUntilVisible(attribution, 300, scrollable: scrollable);
-    expect(attribution, findsOneWidget);
+    expect(find.text('Your journey with the Quran.'), findsOneWidget);
+    expect(
+      find.textContaining('Build a beautiful daily habit'),
+      findsOneWidget,
+    );
+    expect(find.text('Get started'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
   });
 }
