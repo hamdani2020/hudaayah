@@ -10,6 +10,8 @@
 .env
 .env.*
 !.env.example
+# SSM seed values (real secrets) — keep the .example only.
+infra/scripts/params.env
 *.pem
 *.key
 *.p8
@@ -101,3 +103,19 @@ Thumbs.db
 .idea/
 .vscode/
 *.log
+
+# ──────────────────────────────────────────────────────────────
+# Terraform (infra/)
+# ──────────────────────────────────────────────────────────────
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+# NOTE: .terraform.lock.hcl is intentionally committed (provider version pinning).
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json

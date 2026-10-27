@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+# Hudaayah backend bootstrap — installs Docker + Compose + the SSM agent, clones the
+# repo, and does a first `docker compose up --build`. Subsequent deploys are driven by
+# GitHub Actions via SSM, which re-runs /opt/hudaayah/deploy.sh (git pull + compose up).
+set -euxo pipefail
+
+AWS_REGION="${aws_region}"
+APP_PORT="${app_port}"
+GIT_REPO_URL="${git_repo_url}"
+GIT_BRANCH="${git_branch}"
+SSM_PREFIX="${ssm_parameter_prefix}"
+APP_DIR="/opt/hudaayah/app"
+
+# --- Base packages (Amazon Linux 2023) -----------------------------------------
+dnf update -y
+dnf install -y docker amazon-ssm-agent git jq
+
+systemctl enable --now docker
+systemctl enable --now amazon-ssm-agent
+
+# Docker Compose v2 plugin.
+mkdir -p /usr/libexec/docker/cli-plugins
+COMPOSE_VERSION="v2.29.7"
+curl -SL "https://github.com/docker/compose/releases/download/$${COMPOSE_VERSION}/docker-compose-linux-x86_64" \
+  -o /usr/libexec/docker/cli-plugins/docker-compose
+chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+
+mkdir -p /opt/hudaayah
+
+# --- Production compose file ----------------------------------------------------
+# Runs Django (gunicorn) + Postgres on the instance. Secrets come from an env file
+# that deploy.sh rebuilds from SSM Parameter Store on every rollout.
+cat > /opt/hudaayah/docker-compose.prod.yml <<COMPOSE
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    env_file: /opt/hudaayah/app.env
+    environment:
+      POSTGRES_DB: \$${POSTGRES_DB}
+      POSTGRES_USER: \$${POSTGRES_USER}
+      POSTGRES_PASSWORD: \$${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \$${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build:
+      context: __APP_DIR__/backend
+      args:
+        REQUIREMENTS: production
+    restart: unless-stopped
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    env_file: /opt/hudaayah/app.env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.production
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+    ports:
+      - "__APP_PORT__:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+COMPOSE
+sed -i -e "s|__APP_DIR__|$${APP_DIR}|g" -e "s|__APP_PORT__|$${APP_PORT}|g" /opt/hudaayah/docker-compose.prod.yml
+
+# --- Deploy script (re-invoked by SSM on every deploy) --------------------------
+cat > /opt/hudaayah/deploy.sh <<'DEPLOY'
+#!/usr/bin/env bash
+set -euo pipefail
+
+AWS_REGION="__AWS_REGION__"
+GIT_REPO_URL="__GIT_REPO_URL__"
+GIT_BRANCH="__GIT_BRANCH__"
+SSM_PREFIX="__SSM_PREFIX__"
+APP_DIR="/opt/hudaayah/app"
+COMPOSE_FILE="/opt/hudaayah/docker-compose.prod.yml"
+REF="$${1:-$${GIT_BRANCH}}"
+
+# 1) Sync source.
+if [ ! -d "$${APP_DIR}/.git" ]; then
+  git clone --branch "$${GIT_BRANCH}" "$${GIT_REPO_URL}" "$${APP_DIR}"
+fi
+git -C "$${APP_DIR}" fetch --all --prune
+git -C "$${APP_DIR}" checkout "$${GIT_BRANCH}"
+git -C "$${APP_DIR}" reset --hard "origin/$${REF}" 2>/dev/null || git -C "$${APP_DIR}" reset --hard "$${REF}"
+
+# 2) Build the runtime env file from SSM Parameter Store (SecureString params).
+ENV_FILE=/opt/hudaayah/app.env
+: > "$${ENV_FILE}"
+chmod 600 "$${ENV_FILE}"
+for param in $(aws ssm get-parameters-by-path \
+      --region "$${AWS_REGION}" \
+      --path "$${SSM_PREFIX}" \
+      --with-decryption \
+      --recursive \
+      --query 'Parameters[].Name' --output text); do
+  key="$${param##*/}"
+  value="$(aws ssm get-parameter --region "$${AWS_REGION}" --name "$${param}" --with-decryption --query 'Parameter.Value' --output text)"
+  printf '%s=%s\n' "$${key}" "$${value}" >> "$${ENV_FILE}"
+done
+
+# 3) Build + start the stack.
+docker compose -f "$${COMPOSE_FILE}" up -d --build
+
+# 4) Migrations + static files against the running web container.
+docker compose -f "$${COMPOSE_FILE}" exec -T web python manage.py migrate --noinput
+docker compose -f "$${COMPOSE_FILE}" exec -T web python manage.py collectstatic --noinput || true
+
+# 5) Prune dangling images.
+docker image prune -f
+DEPLOY
+
+sed -i \
+  -e "s|__AWS_REGION__|$${AWS_REGION}|g" \
+  -e "s|__GIT_REPO_URL__|$${GIT_REPO_URL}|g" \
+  -e "s|__GIT_BRANCH__|$${GIT_BRANCH}|g" \
+  -e "s|__SSM_PREFIX__|$${SSM_PREFIX}|g" \
+  /opt/hudaayah/deploy.sh
+chmod +x /opt/hudaayah/deploy.sh
+
+# First rollout.
+/opt/hudaayah/deploy.sh "$${GIT_BRANCH}" || echo "Initial deploy failed — check /var/log/cloud-init-output.log and rerun via SSM."
