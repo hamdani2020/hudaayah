@@ -152,7 +152,10 @@ done
 # 3) Build + start the stack. nginx boots with a temporary self-signed cert if no real
 #    one exists yet (see infra/nginx/docker-entrypoint.sh), so it can serve the ACME
 #    HTTP-01 challenge on :80.
-docker compose -f "$${COMPOSE_FILE}" up -d --build
+#    `</dev/null` detaches stdin so the detached containers never inherit (and hold open)
+#    the stdio handles of the SSM-invoked command — otherwise the SSM invocation stays
+#    InProgress forever even though the deploy finished.
+docker compose -f "$${COMPOSE_FILE}" up -d --build </dev/null
 
 # 4) Obtain the Let's Encrypt cert on first deploy (idempotent: --keep-until-expiring
 #    is a no-op once a valid cert exists, so this is safe to run every rollout). The

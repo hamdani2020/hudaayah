@@ -68,6 +68,23 @@ data "aws_iam_policy_document" "instance" {
       values   = ["ssm.${var.aws_region}.amazonaws.com"]
     }
   }
+
+  # Ship SSM RunCommand output to CloudWatch Logs (deploy.sh logs, which can exceed the
+  # inline SSM output limit). Scoped to the default SSM command log group.
+  statement {
+    sid    = "SsmCommandCloudWatchLogs"
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "logs:DescribeLogGroups",
+      "logs:DescribeLogStreams",
+    ]
+    resources = [
+      "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/ssm/*",
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "instance" {

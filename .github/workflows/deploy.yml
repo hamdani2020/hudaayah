@@ -66,7 +66,8 @@ jobs:
             --instance-ids "$EC2_INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy ${DEPLOY_REF}" \
-            --parameters "commands=[\"sudo /opt/hudaayah/deploy.sh ${DEPLOY_REF}\"]" \
+            --parameters "commands=[\"sudo bash -lc 'rm -f /opt/hudaayah/deploy.log; /opt/hudaayah/deploy.sh ${DEPLOY_REF} </dev/null >/opt/hudaayah/deploy.log 2>&1; rc=\$?; tail -n 200 /opt/hudaayah/deploy.log; exit \$rc'\"]" \
+            --cloud-watch-output-config "CloudWatchOutputEnabled=true" \
             --query "Command.CommandId" --output text)
           echo "command_id=$COMMAND_ID" >> "$GITHUB_OUTPUT"
           echo "Dispatched SSM command: $COMMAND_ID"
