@@ -45,7 +45,11 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -q"]
+      # Probe as the configured role. Use $$ so compose does NOT interpolate these
+      # (they are injected into the container via env_file, not compose's own env);
+      # the container shell expands them at runtime. With a bare -U, pg_isready falls
+      # back to the OS user "root" and Postgres logs FATAL "role root does not exist".
+      test: ["CMD-SHELL", "pg_isready -q -U \"\$\$POSTGRES_USER\" -d \"\$\$POSTGRES_DB\""]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -184,6 +188,12 @@ fi
 # 5) Migrations against the running web container. Static files are collected into the
 #    shared staticfiles volume by web's entrypoint on boot (nginx serves /static/).
 docker compose -f "$${COMPOSE_FILE}" exec -T web python manage.py migrate --noinput
+
+# 5b) Seed + publish the Al-Fatihah lesson. Idempotent (update_or_create), so running
+#     on every deploy is safe and ensures content survives a fresh DB / instance
+#     recreation. Non-fatal: a seed failure must not abort an otherwise-good rollout.
+docker compose -f "$${COMPOSE_FILE}" exec -T web python manage.py seed_al_fatihah --publish \
+  || echo "WARNING: seed_al_fatihah failed; continuing."
 
 # 6) Prune dangling images.
 docker image prune -f
