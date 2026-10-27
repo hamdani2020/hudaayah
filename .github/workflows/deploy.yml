@@ -1,9 +1,5 @@
 name: Deploy backend to EC2
 
-# Deploy-only pipeline. Authenticates to AWS with GitHub OIDC (no stored secrets),
-# then triggers the rollout on the EC2 instance over SSM SendCommand. The instance
-# pulls the latest source and runs `docker compose up --build` itself — nothing is
-# built or pushed from GitHub, and no SSH key is stored.
 on:
   push:
     branches: [main]
@@ -27,13 +23,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Non-sensitive deploy targets — set as GitHub Actions *variables* (not secrets),
-  # at repo or environment scope, from `terraform output` (envs/production):
-  #   AWS_REGION      <- aws_region
-  #   AWS_ROLE_ARN    <- deploy_role_arn
-  #   EC2_INSTANCE_ID <- ec2_instance_id
-  # Define under Settings → Secrets and variables → Actions → Variables, or scope them
-  # to the `production` environment used below.
+
   AWS_REGION: ${{ vars.AWS_REGION }}
   AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
   EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
