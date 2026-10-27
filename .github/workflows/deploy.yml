@@ -76,18 +76,34 @@ jobs:
           COMMAND_ID: ${{ steps.ssm.outputs.command_id }}
         run: |
           echo "Waiting for SSM command $COMMAND_ID on $EC2_INSTANCE_ID..."
-          if ! aws ssm wait command-executed \
-                --region "$AWS_REGION" \
-                --command-id "$COMMAND_ID" \
-                --instance-id "$EC2_INSTANCE_ID"; then
-            echo "::warning::Deploy command did not reach Success — fetching output."
-          fi
+          # The built-in `aws ssm wait command-executed` caps at ~10 min, which is too
+          # short for a first deploy that builds the backend + nginx images, pulls
+          # certbot, and runs Let's Encrypt issuance. Poll the invocation status
+          # ourselves until it leaves the in-flight states, up to ~30 min.
+          DEADLINE=$(( $(date +%s) + 1800 ))   # 30 minutes
+          STATUS="Pending"
+          while :; do
+            STATUS=$(aws ssm get-command-invocation \
+              --region "$AWS_REGION" \
+              --command-id "$COMMAND_ID" \
+              --instance-id "$EC2_INSTANCE_ID" \
+              --query "Status" --output text 2>/dev/null || echo "Pending")
 
-          STATUS=$(aws ssm get-command-invocation \
-            --region "$AWS_REGION" \
-            --command-id "$COMMAND_ID" \
-            --instance-id "$EC2_INSTANCE_ID" \
-            --query "Status" --output text)
+            case "$STATUS" in
+              Pending|InProgress|Delayed)
+                if [ "$(date +%s)" -ge "$DEADLINE" ]; then
+                  echo "::warning::Deploy still $STATUS after 30 min — fetching output."
+                  break
+                fi
+                echo "  status=$STATUS — still running, re-checking in 15s..."
+                sleep 15
+                ;;
+              *)
+                echo "Deploy reached terminal status: $STATUS"
+                break
+                ;;
+            esac
+          done
 
           echo "----- stdout -----"
           aws ssm get-command-invocation \
