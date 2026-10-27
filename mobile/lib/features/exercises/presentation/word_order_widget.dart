@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme.dart';
 import '../data/exercise_models.dart';
 
 /// Tap tokens to build an order, then submit the ordered token ids. Arabic
@@ -52,15 +53,15 @@ class _WordOrderWidgetState extends State<WordOrderWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(widget.exercise.prompt, style: theme.textTheme.titleMedium),
+        Text(widget.exercise.prompt, style: theme.textTheme.headlineSmall),
         const SizedBox(height: 16),
         // Chosen sequence.
         Container(
-          constraints: const BoxConstraints(minHeight: 64),
-          padding: const EdgeInsets.all(8),
+          constraints: const BoxConstraints(minHeight: 72),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            border: Border.all(color: theme.colorScheme.outlineVariant),
-            borderRadius: BorderRadius.circular(12),
+            color: AppTheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppTheme.radiusXl),
           ),
           child: Directionality(
             textDirection: TextDirection.rtl,
@@ -71,6 +72,7 @@ class _WordOrderWidgetState extends State<WordOrderWidget> {
                 for (final t in _chosen)
                   _Chip(
                     label: t['text'] as String? ?? '',
+                    selected: true,
                     onTap: widget.enabled ? () => _unpick(t) : null,
                   ),
               ],
@@ -88,6 +90,7 @@ class _WordOrderWidgetState extends State<WordOrderWidget> {
               for (final t in _remaining)
                 _Chip(
                   label: t['text'] as String? ?? '',
+                  selected: false,
                   onTap: widget.enabled ? () => _pick(t) : null,
                 ),
             ],
@@ -108,18 +111,31 @@ class _WordOrderWidgetState extends State<WordOrderWidget> {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.label, this.onTap});
+  const _Chip({required this.label, required this.selected, this.onTap});
   final String label;
+  final bool selected;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ActionChip(
-      label: Text(
-        label,
-        style: const TextStyle(fontFamily: 'UthmanicHafs', fontSize: 22),
+    final bg = selected ? AppTheme.primaryFixed : AppTheme.surfaceContainerLowest;
+    final fg = selected ? AppTheme.onPrimaryFixed : AppTheme.onSurface;
+    return Material(
+      color: bg,
+      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          // Arabic token keeps the UthmanicHafs family (graceful fallback).
+          child: Text(
+            label,
+            style: TextStyle(
+                fontFamily: 'UthmanicHafs', fontSize: 22, color: fg),
+          ),
+        ),
       ),
-      onPressed: onTap,
     );
   }
 }

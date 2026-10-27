@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/option_card.dart';
 import '../data/exercise_models.dart';
 
-/// Renders a prompt + options. Submits the selected option id. No answer key is
-/// present client-side; correctness comes from the server after submit.
+/// Renders a prompt + options as answer cards. Submits the selected option id.
+/// No answer key is present client-side; correctness comes from the server
+/// after submit (design-mapping §2, screen 05).
 class MultipleChoiceWidget extends StatefulWidget {
   const MultipleChoiceWidget({
     super.key,
@@ -23,24 +25,28 @@ class MultipleChoiceWidget extends StatefulWidget {
 class _MultipleChoiceWidgetState extends State<MultipleChoiceWidget> {
   String? _selected;
 
+  static const _letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final options = (widget.exercise.config['options'] as List?) ?? [];
+    final options = ((widget.exercise.config['options'] as List?) ?? []).cast<Map>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(widget.exercise.prompt, style: theme.textTheme.titleMedium),
+        Text(widget.exercise.prompt, style: theme.textTheme.headlineSmall),
         const SizedBox(height: 16),
-        for (final opt in options.cast<Map>())
+        for (var i = 0; i < options.length; i++)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: _OptionTile(
-              label: opt['text'] as String? ?? '',
-              selected: _selected == opt['id'],
-              enabled: widget.enabled,
-              onTap: () => setState(() => _selected = opt['id'] as String?),
+            padding: const EdgeInsets.only(bottom: 10),
+            child: OptionCard(
+              letter: i < _letters.length ? _letters[i] : '${i + 1}',
+              label: options[i]['text'] as String? ?? '',
+              selected: _selected == options[i]['id'],
+              onTap: widget.enabled
+                  ? () => setState(() => _selected = options[i]['id'] as String?)
+                  : null,
             ),
           ),
         const SizedBox(height: 8),
@@ -51,43 +57,6 @@ class _MultipleChoiceWidgetState extends State<MultipleChoiceWidget> {
           child: const Text('Check'),
         ),
       ],
-    );
-  }
-}
-
-class _OptionTile extends StatelessWidget {
-  const _OptionTile({
-    required this.label,
-    required this.selected,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? theme.colorScheme.primary : theme.colorScheme.outline,
-            width: selected ? 2 : 1,
-          ),
-          color: selected
-              ? theme.colorScheme.primary.withValues(alpha: 0.06)
-              : null,
-        ),
-        child: Text(label, style: theme.textTheme.bodyLarge),
-      ),
     );
   }
 }

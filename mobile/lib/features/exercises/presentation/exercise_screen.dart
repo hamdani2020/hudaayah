@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/errors/api_exception.dart';
+import '../../../core/widgets/chips.dart';
+import '../../../core/widgets/feedback_drawer.dart';
+import '../../../core/widgets/segmented_progress_bar.dart';
 import '../../quran_reader/data/lesson_models.dart';
 import '../application/exercise_session_controller.dart';
 import '../data/exercise_models.dart';
@@ -10,8 +14,10 @@ import 'listening_recall_widget.dart';
 import 'multiple_choice_widget.dart';
 import 'word_order_widget.dart';
 
-/// Walks the learner through a lesson's exercises, one at a time, then shows a
-/// gentle completion summary. All grading is server-side.
+/// Walks the learner through a lesson's exercises, one at a time (design-mapping
+/// §2, screen 05). All grading is server-side via [exerciseSessionProvider];
+/// this screen only sequences the UI and, on completion, routes to the
+/// lesson-completion celebration with the session summary.
 class ExerciseScreen extends ConsumerWidget {
   const ExerciseScreen({super.key, required this.lesson});
 
@@ -24,28 +30,40 @@ class ExerciseScreen extends ConsumerWidget {
     final controller = ref.read(exerciseSessionProvider(arg).notifier);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Practice')),
-      body: sessionAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(
-          child: Text(err is ApiException ? err.message : 'Could not start practice.'),
+      backgroundColor: AppTheme.surface,
+      body: SafeArea(
+        child: sessionAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, _) => Center(
+            child: Text(
+                err is ApiException ? err.message : 'Could not start practice.'),
+          ),
+          data: (session) {
+            // On completion, hand off to the celebration screen with the summary.
+            if (session.isComplete) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (context.mounted) {
+                  context.go('/lesson/${lesson.id}/complete',
+                      extra: session.summary);
+                }
+              });
+              return const Center(child: CircularProgressIndicator());
+            }
+            final exercise = session.current;
+            if (exercise == null) {
+              return const Center(
+                  child: Text('No exercises for this lesson yet.'));
+            }
+            return _ExerciseBody(
+              lesson: lesson,
+              session: session,
+              exercise: exercise,
+              onSubmit: controller.submit,
+              onNext: controller.next,
+              onExit: () => context.go('/home'),
+            );
+          },
         ),
-        data: (session) {
-          if (session.isComplete) {
-            return _CompletionView(summary: session.summary!);
-          }
-          final exercise = session.current;
-          if (exercise == null) {
-            return const Center(child: Text('No exercises for this lesson yet.'));
-          }
-          return _ExerciseBody(
-            lesson: lesson,
-            session: session,
-            exercise: exercise,
-            onSubmit: controller.submit,
-            onNext: controller.next,
-          );
-        },
       ),
     );
   }
@@ -58,6 +76,7 @@ class _ExerciseBody extends StatelessWidget {
     required this.exercise,
     required this.onSubmit,
     required this.onNext,
+    required this.onExit,
   });
 
   final Lesson lesson;
@@ -65,34 +84,97 @@ class _ExerciseBody extends StatelessWidget {
   final Exercise exercise;
   final void Function(Map<String, dynamic>) onSubmit;
   final VoidCallback onNext;
+  final VoidCallback onExit;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final total = session.exercises.length;
     final answered = session.lastResult != null;
     // Disable inputs after an answer is graded (until "Continue").
     final enabled = !answered && !session.submitting;
 
+    // Optional section label / root, only when the exercise config provides it
+    // (never fabricated — see design-mapping §0 / §2 screen 05).
+    final sectionLabel = exercise.config['section_label'] as String?;
+    final rootLabel = exercise.config['root'] as String?;
+
     return Column(
       children: [
-        LinearProgressIndicator(
-          value: (session.index + (answered ? 1 : 0)) / session.exercises.length,
+        // Top bar: exit + segmented progress + count chip.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 4, 16, 8),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.close),
+                color: AppTheme.onSurfaceVariant,
+                onPressed: onExit,
+              ),
+              Expanded(
+                child: SegmentedProgressBar(
+                  total: total,
+                  current: session.index + (answered ? 1 : 0),
+                ),
+              ),
+              const SizedBox(width: 12),
+              CountChip(label: '${session.index + 1}/$total'),
+            ],
+          ),
         ),
+        if (sectionLabel != null || rootLabel != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (sectionLabel != null)
+                  Text(
+                    sectionLabel.toUpperCase(),
+                    style: theme.textTheme.labelMedium
+                        ?.copyWith(color: AppTheme.onSurfaceVariant),
+                  ),
+                if (rootLabel != null)
+                  Text(
+                    rootLabel,
+                    style: theme.textTheme.headlineSmall
+                        ?.copyWith(color: AppTheme.secondary),
+                  ),
+              ],
+            ),
+          ),
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: _renderExercise(enabled),
           ),
         ),
-        if (answered) _Feedback(result: session.lastResult!, onNext: onNext),
         if (session.error != null)
           Padding(
             padding: const EdgeInsets.all(12),
             child: Text(session.error!,
                 style: TextStyle(color: theme.colorScheme.error)),
           ),
+        if (answered)
+          FeedbackDrawer(
+            correct: session.lastResult!.correct,
+            message: session.lastResult!.correct
+                ? 'Mā shā’ Allāh! Correct'
+                : 'Keep going — you’re learning',
+            reflection: session.lastResult!.feedback,
+            xpLabel: _xpLabel(session),
+            onContinue: onNext,
+            continueLabel: 'Continue',
+          ),
       ],
     );
+  }
+
+  /// A "+XP" label only when the server returned an xp value; never invented.
+  String? _xpLabel(ExerciseSession session) {
+    final xp = session.summary?['xp_earned'];
+    if (xp is num && xp > 0) return '+$xp XP';
+    return null;
   }
 
   Widget _renderExercise(bool enabled) {
@@ -105,82 +187,12 @@ class _ExerciseBody extends StatelessWidget {
             exercise: exercise, enabled: enabled, onSubmit: onSubmit);
       case ExerciseType.listeningRecall:
         return ListeningRecallWidget(
-            exercise: exercise, ayahs: lesson.ayahs, enabled: enabled, onSubmit: onSubmit);
+            exercise: exercise,
+            ayahs: lesson.ayahs,
+            enabled: enabled,
+            onSubmit: onSubmit);
       case ExerciseType.unknown:
         return const Text('Unsupported exercise.');
     }
-  }
-}
-
-class _Feedback extends StatelessWidget {
-  const _Feedback({required this.result, required this.onNext});
-
-  final GradeResult result;
-  final VoidCallback onNext;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final correct = result.correct;
-    final color = correct ? theme.colorScheme.primary : theme.colorScheme.secondary;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      color: color.withValues(alpha: 0.08),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(correct ? Icons.check_circle : Icons.favorite, color: color),
-              const SizedBox(width: 8),
-              Expanded(child: Text(result.feedback,
-                  style: theme.textTheme.bodyLarge)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          FilledButton(onPressed: onNext, child: const Text('Continue')),
-        ],
-      ),
-    );
-  }
-}
-
-class _CompletionView extends StatelessWidget {
-  const _CompletionView({required this.summary});
-
-  final Map<String, dynamic> summary;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final correct = summary['correct'] ?? 0;
-    final total = summary['total'] ?? 0;
-    final xp = summary['xp_earned'] ?? 0;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Alhamdulillah!',
-                style: theme.textTheme.headlineMedium, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            Text('You recalled $correct of $total. +$xp XP',
-                style: theme.textTheme.bodyLarge, textAlign: TextAlign.center),
-            const SizedBox(height: 8),
-            Text('Keep going — a little each day builds a lasting habit.',
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                textAlign: TextAlign.center),
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: () => context.go('/home'),
-              child: const Text('Back to home'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

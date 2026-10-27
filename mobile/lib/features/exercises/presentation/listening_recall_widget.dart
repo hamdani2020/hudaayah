@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/theme.dart';
 import '../../quran_reader/application/audio_controller.dart';
 import '../../quran_reader/data/lesson_models.dart';
 import '../data/exercise_models.dart';
@@ -34,18 +35,28 @@ class ListeningRecallWidget extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(exercise.prompt, style: theme.textTheme.titleMedium),
+        Text(exercise.prompt, style: theme.textTheme.headlineSmall),
         const SizedBox(height: 16),
         if (ayah?.audioUrl != null)
           Center(
-            child: IconButton.filled(
-              iconSize: 48,
-              icon: Icon(isThis && audio.playing ? Icons.pause : Icons.play_arrow),
-              onPressed: enabled
-                  ? () => ref
-                      .read(audioControllerProvider.notifier)
-                      .playAyah(verseKey!, ayah!.audioUrl!)
-                  : null,
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.primaryContainer,
+              ),
+              child: IconButton(
+                iconSize: 40,
+                color: AppTheme.onPrimary,
+                icon: Icon(
+                    isThis && audio.playing ? Icons.pause : Icons.play_arrow),
+                onPressed: enabled
+                    ? () => ref
+                        .read(audioControllerProvider.notifier)
+                        .playAyah(verseKey!, ayah!.audioUrl!)
+                    : null,
+              ),
             ),
           )
         else
