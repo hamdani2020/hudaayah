@@ -1,4 +1,3 @@
-# Hudaayah backend image — Django + DRF (modular monolith)
 FROM python:3.13-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
