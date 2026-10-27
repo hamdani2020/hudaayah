@@ -108,9 +108,10 @@ done
 # 3) Build + start the stack.
 docker compose -f "$${COMPOSE_FILE}" up -d --build
 
-# 4) Migrations + static files against the running web container.
+# 4) Migrations against the running web container. Static files are collected at image
+#    build time (see backend/Dockerfile), so the WhiteNoise manifest already exists
+#    before gunicorn boots — no runtime collectstatic needed.
 docker compose -f "$${COMPOSE_FILE}" exec -T web python manage.py migrate --noinput
-docker compose -f "$${COMPOSE_FILE}" exec -T web python manage.py collectstatic --noinput || true
 
 # 5) Prune dangling images.
 docker image prune -f

@@ -20,6 +20,17 @@ COPY . .
 
 RUN chmod +x ./entrypoint.sh
 
+# Collect static files into STATIC_ROOT at build time so the WhiteNoise manifest
+# (staticfiles.json) exists before gunicorn boots. collectstatic only needs settings
+# to import — not the real secret/DB — so dummy values satisfy production.py's
+# env requirements; the collected output is identical regardless of their values.
+# This is a no-op when REQUIREMENTS=development (dev settings), which is harmless.
+RUN DJANGO_SETTINGS_MODULE=config.settings.production \
+    DJANGO_SECRET_KEY=build-time-dummy \
+    DJANGO_ALLOWED_HOSTS=localhost \
+    DJANGO_SECURE_SSL_REDIRECT=false \
+    python manage.py collectstatic --noinput
+
 EXPOSE 8000
 
 # Invoke via bash so a bind-mount that drops the execute bit doesn't break boot.
