@@ -8,8 +8,18 @@ variable "github_owner" {
   type        = string
 }
 
+variable "github_owner_id" {
+  description = "Immutable numeric GitHub account ID of the owner. With GitHub's immutable OIDC, the token sub is repo:OWNER@OWNER_ID/REPO@REPO_ID:... Find it in the decoded token sub, or GET https://api.github.com/users/<owner> (field `id`)."
+  type        = string
+}
+
 variable "github_repo" {
   description = "GitHub repository name (e.g. hudaayah)."
+  type        = string
+}
+
+variable "github_repo_id" {
+  description = "Immutable numeric GitHub repository ID. From the decoded token sub, or GET https://api.github.com/repos/<owner>/<repo> (field `id`)."
   type        = string
 }
 

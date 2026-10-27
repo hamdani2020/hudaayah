@@ -35,10 +35,22 @@ variable "github_owner" {
   default     = "hamdani2020"
 }
 
+variable "github_owner_id" {
+  description = "Immutable numeric GitHub account ID of the owner (from the OIDC token sub, or api.github.com/users/<owner>)."
+  type        = string
+  default     = "56797506"
+}
+
 variable "github_repo" {
   description = "GitHub repository name."
   type        = string
   default     = "hudaayah"
+}
+
+variable "github_repo_id" {
+  description = "Immutable numeric GitHub repository ID (from the OIDC token sub, or api.github.com/repos/<owner>/<repo>)."
+  type        = string
+  default     = "1432092664"
 }
 
 variable "github_branch" {

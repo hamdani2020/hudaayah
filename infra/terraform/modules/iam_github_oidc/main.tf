@@ -18,7 +18,9 @@ resource "aws_iam_openid_connect_provider" "github" {
 locals {
   oidc_provider_arn = var.create_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : "arn:aws:iam::${var.account_id}:oidc-provider/token.actions.githubusercontent.com"
 
-  repo_prefix = "repo:${var.github_owner}/${var.github_repo}"
+  # GitHub immutable OIDC: the token subject embeds numeric owner/repo IDs, i.e.
+  #   repo:OWNER@OWNER_ID/REPO@REPO_ID:ref:...  (or :environment:ENV)
+  repo_prefix = "repo:${var.github_owner}@${var.github_owner_id}/${var.github_repo}@${var.github_repo_id}"
 
   # The ref-based subject GitHub sends for push / workflow_dispatch on a branch.
   ref_subject = var.allowed_ref == "*" ? "${local.repo_prefix}:*" : "${local.repo_prefix}:ref:${var.allowed_ref}"

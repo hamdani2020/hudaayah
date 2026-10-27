@@ -65,7 +65,9 @@ module "github_oidc" {
 
   name                 = local.name
   github_owner         = var.github_owner
+  github_owner_id      = var.github_owner_id
   github_repo          = var.github_repo
+  github_repo_id       = var.github_repo_id
   allowed_ref          = var.github_allowed_ref
   github_environment   = var.github_environment
   create_oidc_provider = var.create_oidc_provider
