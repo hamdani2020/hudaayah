@@ -19,6 +19,12 @@ variable "allowed_ref" {
   default     = "refs/heads/main"
 }
 
+variable "github_environment" {
+  description = "GitHub Actions environment used by the deploy job. When set, GitHub issues OIDC tokens with sub=repo:OWNER/REPO:environment:ENV, so the trust policy must allow it. Empty = no environment claim allowed."
+  type        = string
+  default     = ""
+}
+
 variable "create_oidc_provider" {
   description = "Create the GitHub OIDC provider. Set false if token.actions.githubusercontent.com already exists in the account."
   type        = bool

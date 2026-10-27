@@ -17,7 +17,17 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 locals {
   oidc_provider_arn = var.create_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : "arn:aws:iam::${var.account_id}:oidc-provider/token.actions.githubusercontent.com"
-  subject_claim     = "repo:${var.github_owner}/${var.github_repo}:${var.allowed_ref == "*" ? "*" : var.allowed_ref == "refs/heads/main" ? "ref:refs/heads/main" : "ref:${var.allowed_ref}"}"
+
+  repo_prefix = "repo:${var.github_owner}/${var.github_repo}"
+
+  # The ref-based subject GitHub sends for push / workflow_dispatch on a branch.
+  ref_subject = var.allowed_ref == "*" ? "${local.repo_prefix}:*" : "${local.repo_prefix}:ref:${var.allowed_ref}"
+
+  # When the job sets `environment:`, GitHub instead sends
+  # sub=repo:OWNER/REPO:environment:ENV. Allow it too when configured.
+  env_subject = var.github_environment != "" ? ["${local.repo_prefix}:environment:${var.github_environment}"] : []
+
+  subject_claims = concat([local.ref_subject], local.env_subject)
 }
 
 # ── Trust policy: only this repo (and ref) may assume the role via OIDC ─────────
@@ -40,7 +50,7 @@ data "aws_iam_policy_document" "assume" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = [local.subject_claim]
+      values   = local.subject_claims
     }
   }
 }

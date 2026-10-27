@@ -59,6 +59,12 @@ variable "github_allowed_ref" {
   default     = "refs/heads/main"
 }
 
+variable "github_environment" {
+  description = "GitHub Actions environment the deploy job uses. Must match `environment:` in deploy.yml so the OIDC trust policy allows the environment subject claim. Set empty if the job has no environment."
+  type        = string
+  default     = "production"
+}
+
 variable "create_oidc_provider" {
   description = "Create the GitHub OIDC provider (false if it already exists in the account)."
   type        = bool

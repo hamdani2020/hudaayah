@@ -67,6 +67,7 @@ module "github_oidc" {
   github_owner         = var.github_owner
   github_repo          = var.github_repo
   allowed_ref          = var.github_allowed_ref
+  github_environment   = var.github_environment
   create_oidc_provider = var.create_oidc_provider
   deploy_instance_arns = [module.ec2.instance_arn]
   aws_region           = var.aws_region
