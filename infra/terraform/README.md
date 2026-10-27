@@ -62,3 +62,53 @@ Populate SSM params (`README-SSM.md`) before the first deploy.
 
 > State: for a real deployment move the backend to S3 + DynamoDB locking. The scaffold
 > uses local state so you can `apply` immediately; see `backend.tf`.
+
+## TLS / reverse proxy (nginx + Let's Encrypt)
+
+HTTPS for `api.hudaayah.xyz` is terminated on the instance by an **nginx** container that
+proxies to gunicorn over the internal compose network. gunicorn (port 8000) is **not**
+published to the host — only nginx's 80/443 are. nginx also serves `/static/` directly
+from a volume shared with the `web` container. Django's `production.py` trusts the
+`X-Forwarded-Proto: https` header nginx sets, so secure cookies, CSRF, and the SSL
+redirect all work end to end.
+
+Components (all in `docker-compose.prod.yml`, built from `infra/nginx/`):
+
+- **nginx** — on first boot, drops in a temporary self-signed cert so it can bind 443,
+  then serves the ACME HTTP-01 challenge on port 80 from `/var/www/certbot`.
+- **certbot (service)** — a long-running container whose entrypoint is an **infinite
+  renewal loop** (`while :; do certbot renew; sleep 12h; done`). It renews the cert
+  automatically; nginx reloads every 6h to pick up renewed certs.
+- **first issuance** — handled by `deploy.sh`, which runs `certbot certonly --webroot`
+  once (idempotent via `--keep-until-expiring`) and reloads nginx.
+
+### Stable IP
+
+The instance is recreated whenever `user_data` changes (`user_data_replace_on_change`).
+A pre-existing **Elastic IP** (set `eip_allocation_id` in `terraform.tfvars`) is kept
+associated via `aws_eip_association`, so `api.hudaayah.xyz`'s A record stays valid across
+recreation. Terraform manages only the association, never the allocation, so the EIP is
+never released by Terraform.
+
+### Gotcha: certbot entrypoint when running one-off commands
+
+The certbot **service** overrides its entrypoint with the renewal loop. That means
+`docker compose run certbot certonly ...` appends `certonly ...` as *arguments to the
+loop*, which ignores them and runs forever — the `run` container never exits, so
+`deploy.sh` (and the SSM command that invoked it) hangs in `InProgress` indefinitely.
+
+Always override the entrypoint when running a one-off certbot command:
+
+```bash
+docker compose -f docker-compose.prod.yml run --rm --entrypoint certbot certbot \
+  certonly --webroot -w /var/www/certbot -d api.hudaayah.xyz ...
+```
+
+### First deploy is slow
+
+A fresh instance builds the backend and nginx images and runs cert issuance from a cold
+cache — this can take well over 10 minutes on a `t3.medium`. The GitHub Actions deploy
+polls SSM for up to 30 minutes and ships full output to CloudWatch Logs (`/aws/ssm/*`).
+To avoid cold builds entirely, build + push to a registry (e.g. ECR) and have the
+instance `docker compose pull` instead of building — deferred until build time is a real
+problem.

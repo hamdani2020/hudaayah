@@ -107,6 +107,18 @@ variable "ssh_ingress_cidrs" {
   default     = []
 }
 
+variable "http_ingress_cidrs" {
+  description = "CIDRs allowed to reach HTTP (80). Must stay open to the internet: nginx needs port 80 for the Let's Encrypt HTTP-01 challenge and to redirect to HTTPS."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
+
+variable "https_ingress_cidrs" {
+  description = "CIDRs allowed to reach HTTPS (443) — the public API/admin endpoint."
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
+
 variable "app_ingress_cidrs" {
   description = "CIDRs allowed to reach the Django app port (8000) directly. Default closed: nginx terminates TLS on 443 and proxies to gunicorn over the internal compose network, so 8000 should not be publicly reachable."
   type        = list(string)

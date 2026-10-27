@@ -169,7 +169,10 @@ if ! docker compose -f "$${COMPOSE_FILE}" run --rm --entrypoint sh certbot -c \
   # Remove any temporary self-signed cert so certbot writes into a clean live dir.
   docker compose -f "$${COMPOSE_FILE}" run --rm --entrypoint sh certbot -c \
     "rm -rf /etc/letsencrypt/live/$${SERVER_NAME} /etc/letsencrypt/archive/$${SERVER_NAME} /etc/letsencrypt/renewal/$${SERVER_NAME}.conf" || true
-  docker compose -f "$${COMPOSE_FILE}" run --rm certbot certonly \
+  # Override the entrypoint: the certbot *service* runs an infinite renewal loop, so
+  # `compose run certbot certonly ...` would append args to that loop and hang forever.
+  # Point back at the certbot binary so these args are the actual issuance command.
+  docker compose -f "$${COMPOSE_FILE}" run --rm --entrypoint certbot certbot certonly \
     --webroot -w /var/www/certbot \
     -d "$${SERVER_NAME}" \
     --email "$${LETSENCRYPT_EMAIL}" \

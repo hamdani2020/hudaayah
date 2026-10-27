@@ -37,11 +37,13 @@ module "network" {
 module "security" {
   source = "../../modules/security"
 
-  name              = local.name
-  vpc_id            = module.network.vpc_id
-  ssh_ingress_cidrs = var.ssh_ingress_cidrs
-  app_ingress_cidrs = var.app_ingress_cidrs
-  tags              = local.common_tags
+  name                = local.name
+  vpc_id              = module.network.vpc_id
+  ssh_ingress_cidrs   = var.ssh_ingress_cidrs
+  http_ingress_cidrs  = var.http_ingress_cidrs
+  https_ingress_cidrs = var.https_ingress_cidrs
+  app_ingress_cidrs   = var.app_ingress_cidrs
+  tags                = local.common_tags
 }
 
 module "ec2" {

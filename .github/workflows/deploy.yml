@@ -13,7 +13,6 @@ on:
         required: false
         type: string
 
-# Required for OIDC: the workflow requests a short-lived token to assume the AWS role.
 permissions:
   id-token: write
   contents: read
