@@ -90,6 +90,8 @@ locals {
     git_repo_url         = var.git_repo_url
     git_branch           = var.git_branch
     ssm_parameter_prefix = var.ssm_parameter_prefix
+    server_name          = var.server_name
+    letsencrypt_email    = var.letsencrypt_email
   })
 }
 
@@ -117,4 +119,13 @@ resource "aws_instance" "this" {
   }
 
   tags = merge(var.tags, { Name = "${var.name}-web" })
+}
+
+# Associate a pre-existing Elastic IP (allocated out-of-band) with the instance so the
+# public IP is stable across instance replacement. Terraform manages only the
+# association; it does not own/allocate the EIP, so it will never release it.
+resource "aws_eip_association" "this" {
+  count         = var.eip_allocation_id != "" ? 1 : 0
+  instance_id   = aws_instance.this.id
+  allocation_id = var.eip_allocation_id
 }

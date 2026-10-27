@@ -8,6 +8,14 @@ DEBUG = False
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS")
 
+# Django 4+ requires the scheme+host of admin/form POSTs to be a trusted CSRF origin.
+# Behind nginx+TLS these are the HTTPS origins of each allowed host. Overridable via env
+# (DJANGO_CSRF_TRUSTED_ORIGINS, comma-separated full origins like https://api.example.com).
+CSRF_TRUSTED_ORIGINS = env.list(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    default=[f"https://{host}" for host in ALLOWED_HOSTS],
+)
+
 # Static files served by WhiteNoise (middleware added in base.py). Use the compressed +
 # hashed manifest backend so admin/CSS/JS get far-future caching and cache-busting.
 STORAGES = {

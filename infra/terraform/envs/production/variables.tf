@@ -83,6 +83,23 @@ variable "create_oidc_provider" {
   default     = true
 }
 
+# ── TLS / reverse proxy ────────────────────────────────────────────────────────
+variable "server_name" {
+  description = "Public DNS name nginx terminates TLS for (e.g. api.hudaayah.xyz). Must already resolve to the instance's public IP before apply so Let's Encrypt can issue."
+  type        = string
+}
+
+variable "letsencrypt_email" {
+  description = "Contact email registered with Let's Encrypt (renewal/expiry notices)."
+  type        = string
+}
+
+variable "eip_allocation_id" {
+  description = "Allocation ID (eipalloc-...) of the pre-existing Elastic IP to keep associated with the instance across replacement. The domain's A record must point at this EIP. Empty = use the instance's auto-assigned public IP (changes on every recreate)."
+  type        = string
+  default     = ""
+}
+
 # ── Access control ───────────────────────────────────────────────────────────
 variable "ssh_ingress_cidrs" {
   description = "CIDRs allowed to SSH. Empty = SSH closed (use SSM Session Manager)."
@@ -91,9 +108,9 @@ variable "ssh_ingress_cidrs" {
 }
 
 variable "app_ingress_cidrs" {
-  description = "CIDRs allowed to reach the Django app port (8000). Empty = closed."
+  description = "CIDRs allowed to reach the Django app port (8000) directly. Default closed: nginx terminates TLS on 443 and proxies to gunicorn over the internal compose network, so 8000 should not be publicly reachable."
   type        = list(string)
-  default     = ["0.0.0.0/0"]
+  default     = []
 }
 
 variable "key_name" {

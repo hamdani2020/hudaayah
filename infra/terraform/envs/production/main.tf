@@ -57,6 +57,9 @@ module "ec2" {
   git_repo_url         = var.git_repo_url
   git_branch           = var.github_branch
   ssm_parameter_prefix = local.ssm_parameter_prefix
+  server_name          = var.server_name
+  letsencrypt_email    = var.letsencrypt_email
+  eip_allocation_id    = var.eip_allocation_id
   tags                 = local.common_tags
 }
 

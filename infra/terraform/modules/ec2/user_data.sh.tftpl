@@ -9,6 +9,8 @@ APP_PORT="${app_port}"
 GIT_REPO_URL="${git_repo_url}"
 GIT_BRANCH="${git_branch}"
 SSM_PREFIX="${ssm_parameter_prefix}"
+SERVER_NAME="${server_name}"
+LETSENCRYPT_EMAIL="${letsencrypt_email}"
 APP_DIR="/opt/hudaayah/app"
 
 # --- Base packages (Amazon Linux 2023) -----------------------------------------
@@ -28,8 +30,10 @@ chmod +x /usr/libexec/docker/cli-plugins/docker-compose
 mkdir -p /opt/hudaayah
 
 # --- Production compose file ----------------------------------------------------
-# Runs Django (gunicorn) + Postgres on the instance. Secrets come from an env file
-# that deploy.sh rebuilds from SSM Parameter Store on every rollout.
+# Runs nginx (TLS) + Django (gunicorn) + Postgres on the instance. nginx terminates
+# HTTPS for the configured server name and proxies to gunicorn on the internal network —
+# gunicorn is NOT published to the host. certbot issues/renews the Let's Encrypt cert.
+# Secrets come from an env file that deploy.sh rebuilds from SSM on every rollout.
 cat > /opt/hudaayah/docker-compose.prod.yml <<COMPOSE
 services:
   db:
@@ -58,16 +62,54 @@ services:
       DJANGO_SETTINGS_MODULE: config.settings.production
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
-    ports:
-      - "__APP_PORT__:8000"
+    # No host port: only nginx reaches gunicorn, over the internal compose network.
+    expose:
+      - "8000"
+    volumes:
+      # Shared with nginx so it can serve /static/ directly. web's entrypoint runs
+      # collectstatic into this path on boot.
+      - staticfiles:/app/staticfiles
     depends_on:
       db:
         condition: service_healthy
 
+  nginx:
+    build:
+      context: __APP_DIR__/infra/nginx
+    restart: unless-stopped
+    environment:
+      SERVER_NAME: __SERVER_NAME__
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - staticfiles:/app/staticfiles:ro
+      - letsencrypt:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    depends_on:
+      - web
+
+  # One-shot/renewal certbot. deploy.sh runs issuance explicitly on first deploy;
+  # this service handles periodic renewal (checks twice daily, no-op until due).
+  certbot:
+    image: certbot/certbot:latest
+    restart: unless-stopped
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h; done'
+
 volumes:
   pgdata:
+  staticfiles:
+  letsencrypt:
+  certbot_www:
 COMPOSE
-sed -i -e "s|__APP_DIR__|$${APP_DIR}|g" -e "s|__APP_PORT__|$${APP_PORT}|g" /opt/hudaayah/docker-compose.prod.yml
+sed -i \
+  -e "s|__APP_DIR__|$${APP_DIR}|g" \
+  -e "s|__APP_PORT__|$${APP_PORT}|g" \
+  -e "s|__SERVER_NAME__|$${SERVER_NAME}|g" \
+  /opt/hudaayah/docker-compose.prod.yml
 
 # --- Deploy script (re-invoked by SSM on every deploy) --------------------------
 cat > /opt/hudaayah/deploy.sh <<'DEPLOY'
@@ -78,6 +120,8 @@ AWS_REGION="__AWS_REGION__"
 GIT_REPO_URL="__GIT_REPO_URL__"
 GIT_BRANCH="__GIT_BRANCH__"
 SSM_PREFIX="__SSM_PREFIX__"
+SERVER_NAME="__SERVER_NAME__"
+LETSENCRYPT_EMAIL="__LETSENCRYPT_EMAIL__"
 APP_DIR="/opt/hudaayah/app"
 COMPOSE_FILE="/opt/hudaayah/docker-compose.prod.yml"
 REF="$${1:-$${GIT_BRANCH}}"
@@ -105,15 +149,37 @@ for param in $(aws ssm get-parameters-by-path \
   printf '%s=%s\n' "$${key}" "$${value}" >> "$${ENV_FILE}"
 done
 
-# 3) Build + start the stack.
+# 3) Build + start the stack. nginx boots with a temporary self-signed cert if no real
+#    one exists yet (see infra/nginx/docker-entrypoint.sh), so it can serve the ACME
+#    HTTP-01 challenge on :80.
 docker compose -f "$${COMPOSE_FILE}" up -d --build
 
-# 4) Migrations against the running web container. Static files are collected at image
-#    build time (see backend/Dockerfile), so the WhiteNoise manifest already exists
-#    before gunicorn boots — no runtime collectstatic needed.
+# 4) Obtain the Let's Encrypt cert on first deploy (idempotent: --keep-until-expiring
+#    is a no-op once a valid cert exists, so this is safe to run every rollout). The
+#    certbot container in compose handles ongoing renewal; this handles first issuance.
+#    The authoritative check runs inside the certbot container against the shared
+#    letsencrypt volume: issue when there is no real cert (or only the self-signed
+#    placeholder, which certbot did not register, so no renewal/<name>.conf exists).
+if ! docker compose -f "$${COMPOSE_FILE}" run --rm --entrypoint sh certbot -c \
+      "test -f /etc/letsencrypt/renewal/$${SERVER_NAME}.conf && openssl x509 -checkend 86400 -noout -in /etc/letsencrypt/live/$${SERVER_NAME}/cert.pem" 2>/dev/null; then
+  echo "Requesting/renewing Let's Encrypt certificate for $${SERVER_NAME}..."
+  # Remove any temporary self-signed cert so certbot writes into a clean live dir.
+  docker compose -f "$${COMPOSE_FILE}" run --rm --entrypoint sh certbot -c \
+    "rm -rf /etc/letsencrypt/live/$${SERVER_NAME} /etc/letsencrypt/archive/$${SERVER_NAME} /etc/letsencrypt/renewal/$${SERVER_NAME}.conf" || true
+  docker compose -f "$${COMPOSE_FILE}" run --rm certbot certonly \
+    --webroot -w /var/www/certbot \
+    -d "$${SERVER_NAME}" \
+    --email "$${LETSENCRYPT_EMAIL}" \
+    --agree-tos --no-eff-email --non-interactive \
+    --keep-until-expiring \
+    && docker compose -f "$${COMPOSE_FILE}" exec -T nginx nginx -s reload
+fi
+
+# 5) Migrations against the running web container. Static files are collected into the
+#    shared staticfiles volume by web's entrypoint on boot (nginx serves /static/).
 docker compose -f "$${COMPOSE_FILE}" exec -T web python manage.py migrate --noinput
 
-# 5) Prune dangling images.
+# 6) Prune dangling images.
 docker image prune -f
 DEPLOY
 
@@ -122,6 +188,8 @@ sed -i \
   -e "s|__GIT_REPO_URL__|$${GIT_REPO_URL}|g" \
   -e "s|__GIT_BRANCH__|$${GIT_BRANCH}|g" \
   -e "s|__SSM_PREFIX__|$${SSM_PREFIX}|g" \
+  -e "s|__SERVER_NAME__|$${SERVER_NAME}|g" \
+  -e "s|__LETSENCRYPT_EMAIL__|$${LETSENCRYPT_EMAIL}|g" \
   /opt/hudaayah/deploy.sh
 chmod +x /opt/hudaayah/deploy.sh
 

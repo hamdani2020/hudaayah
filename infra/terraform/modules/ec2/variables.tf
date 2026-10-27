@@ -58,6 +58,22 @@ variable "ssm_parameter_prefix" {
   type        = string
 }
 
+variable "server_name" {
+  description = "Public DNS name nginx terminates TLS for (e.g. api.hudaayah.xyz). Must resolve to this instance's public IP for Let's Encrypt issuance to succeed."
+  type        = string
+}
+
+variable "letsencrypt_email" {
+  description = "Contact email registered with Let's Encrypt for the TLS cert (renewal/expiry notices)."
+  type        = string
+}
+
+variable "eip_allocation_id" {
+  description = "Allocation ID (eipalloc-...) of a pre-existing Elastic IP to associate with the instance. The EIP keeps a stable public IP across instance replacement (user_data changes recreate the instance). Terraform manages only the association, not the EIP allocation, so it is never released by Terraform. Empty = no EIP (instance uses its auto-assigned public IP)."
+  type        = string
+  default     = ""
+}
+
 variable "tags" {
   description = "Tags applied to EC2 resources."
   type        = map(string)
