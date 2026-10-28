@@ -7,5 +7,4 @@ requests==2.32.3
 gunicorn==23.0.0
 whitenoise==6.12.0
 
-# Auth — verify Google ID tokens server-side (JWKS, iss/aud/exp checks)
 google-auth==2.37.0
