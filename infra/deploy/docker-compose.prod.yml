@@ -9,6 +9,12 @@
 # points --env-file at the SSM-derived app.env):
 #   SERVER_NAME     public hostname nginx serves (e.g. api.hudaayah.xyz)
 #   APP_ENV_FILE    path to the runtime env file built from SSM (default /opt/hudaayah/app.env)
+
+# Fixed project name so the stack is identified as "hudaayah" regardless of the directory
+# compose is invoked from (it lives in infra/deploy/, which would otherwise make the
+# project "deploy" and orphan the existing hudaayah_* volumes/containers).
+name: hudaayah
+
 services:
   db:
     image: postgres:16
