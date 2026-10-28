@@ -1,4 +1,4 @@
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -6,8 +6,24 @@ from apps.accounts.authentication import BearerTokenAuthentication
 from apps.common.errors import AppError
 
 from .models import Lesson
-from .serializers import LessonSerializer
+from .serializers import LessonListItemSerializer, LessonSerializer
 from .services import build_lesson_content
+
+
+class LessonListView(ListAPIView):
+    """GET /lessons/ — published lessons as a lightweight catalog (no QF content).
+
+    Drives the client's surah list fully from the backend, so new published
+    lessons appear with no app change.
+    """
+
+    authentication_classes = [BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = LessonListItemSerializer
+    pagination_class = None  # small catalog; return all published lessons
+
+    def get_queryset(self):
+        return Lesson.objects.published().order_by("order", "id")
 
 
 class LessonNotAvailable(AppError):

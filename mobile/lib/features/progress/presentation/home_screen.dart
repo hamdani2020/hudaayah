@@ -50,15 +50,7 @@ class HomeScreen extends ConsumerWidget {
                     children: [
                       _Greeting(name: name),
                       const SizedBox(height: 20),
-                      HabitCard(
-                        title: 'Surah Al-Fatihah',
-                        subtitle: 'Ayah 1–7 • The Opening',
-                        percent: _habitPercent(summary),
-                        buttonLabel: _habitDone(summary)
-                            ? 'Review Al-Fatihah'
-                            : 'Continue Reading',
-                        onContinue: () => context.go('/reader/1'),
-                      ),
+                      _buildHabitCard(context, summary),
                       const SizedBox(height: 16),
                       dueAsync.maybeWhen(
                         data: (items) => items.isEmpty
@@ -98,12 +90,39 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  static bool _habitDone(ProgressSummary summary) =>
-      summary.lessons.isNotEmpty && summary.lessons.first.isCompleted;
+  /// Today's habit card targets the next lesson to work on: the first lesson
+  /// that isn't completed, else the first lesson. Title/subtitle come from the
+  /// lesson's own data (not a hardcoded surah), so Al-Baqarah shows correctly.
+  Widget _buildHabitCard(BuildContext context, ProgressSummary summary) {
+    final lessons = summary.lessons;
+    if (lessons.isEmpty) {
+      return HabitCard(
+        title: 'Start Learning',
+        subtitle: 'Begin your first lesson',
+        percent: 0,
+        buttonLabel: 'Start',
+        onContinue: () => context.go('/surah'),
+      );
+    }
 
-  // Honest completion fraction: 100% if the first lesson is completed, else 0%.
-  static double _habitPercent(ProgressSummary summary) =>
-      _habitDone(summary) ? 1.0 : 0.0;
+    final focus = lessons.firstWhere(
+      (l) => !l.isCompleted,
+      orElse: () => lessons.first,
+    );
+    final name =
+        focus.surahNameEn.isNotEmpty ? focus.surahNameEn : focus.title;
+    final subtitle = focus.surahMeaning.isNotEmpty
+        ? '${focus.ayahRange} • ${focus.surahMeaning}'
+        : focus.ayahRange;
+
+    return HabitCard(
+      title: 'Surah $name',
+      subtitle: subtitle,
+      percent: focus.isCompleted ? 1.0 : 0.0,
+      buttonLabel: focus.isCompleted ? 'Review $name' : 'Continue Reading',
+      onContinue: () => context.go('/reader/${focus.lessonId}'),
+    );
+  }
 }
 
 class _Greeting extends StatelessWidget {
@@ -148,13 +167,16 @@ class _JourneyList extends StatelessWidget {
     return Column(
       children: [
         for (final l in lessons) ...[
-          LessonJourneyTile(
-            title: 'Surah Al-Fatihah',
-            subtitle: l.isCompleted
-                ? 'Foundation & Word Meanings'
-                : 'Word Meanings & Practice',
-            completed: l.isCompleted,
-          ),
+          Builder(builder: (_) {
+            final name = l.surahNameEn.isNotEmpty ? l.surahNameEn : l.title;
+            return LessonJourneyTile(
+              title: 'Surah $name',
+              subtitle: l.isCompleted
+                  ? '${l.ayahRange} • Completed'
+                  : '${l.ayahRange} • Word Meanings & Practice',
+              completed: l.isCompleted,
+            );
+          }),
           const SizedBox(height: 8),
         ],
       ],

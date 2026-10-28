@@ -84,13 +84,19 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
               audio.verseKey == firstAudioAyah.verseKey &&
               audio.loading;
 
+          // Heading comes from the lesson's own backend metadata (so each surah
+          // shows correctly). Prefer the Arabic surah name; fall back to title.
+          final surahTitle =
+              lesson.surahNameAr.isNotEmpty ? lesson.surahNameAr : lesson.title;
+          final reciterLabel = 'Mishary Rashid Alafasy • ${lesson.ayahRange}';
+
           return Stack(
             children: [
               Column(
                 children: [
                   AudioStrip(
-                    surahTitle: 'Surah Al-Fātiḥah',
-                    reciterLabel: 'Mishary Rashid Alafasy • Ayah 1–7',
+                    surahTitle: surahTitle,
+                    reciterLabel: reciterLabel,
                     playing: isStripAyahPlaying,
                     loading: isStripAyahLoading,
                     looping: audio.looping,

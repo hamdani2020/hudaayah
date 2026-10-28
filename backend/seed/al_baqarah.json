@@ -29,6 +29,11 @@
     "surah": 2,
     "ayah_start": 1,
     "ayah_end": 5,
+    "surah_name_en": "Al-Baqarah",
+    "surah_name_ar": "البقرة",
+    "surah_meaning": "The Cow",
+    "surah_ayah_count": 286,
+    "revelation_place": "Madani",
     "translation_provider_ref": "85",
     "recitation_provider_ref": "7"
   },

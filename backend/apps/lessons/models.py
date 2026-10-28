@@ -61,6 +61,22 @@ class Lesson(PublishableModel):
     ayah_start = models.PositiveIntegerField(default=1)
     ayah_end = models.PositiveIntegerField(default=7)
 
+    # Presentational surah metadata (catalog chrome, NOT Quran verse text). Shown in
+    # the app's surah list/reader headings. Seeded per-lesson so adding a surah needs
+    # no client change. Arabic *name* is a title, not verse text (quran-content-rules).
+    class RevelationPlace(models.TextChoices):
+        MAKKI = "Makki", "Makki"
+        MADANI = "Madani", "Madani"
+        UNKNOWN = "", "Unknown"
+
+    surah_name_en = models.CharField(max_length=80, blank=True, default="")
+    surah_name_ar = models.CharField(max_length=80, blank=True, default="")
+    surah_meaning = models.CharField(max_length=120, blank=True, default="")
+    surah_ayah_count = models.PositiveIntegerField(default=0)
+    revelation_place = models.CharField(
+        max_length=8, choices=RevelationPlace.choices, blank=True, default=""
+    )
+
     # QF resource references (stable IDs), NOT text.
     translation_source = models.ForeignKey(
         ContentSource, on_delete=models.PROTECT, null=True, blank=True,

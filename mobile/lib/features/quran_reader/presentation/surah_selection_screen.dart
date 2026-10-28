@@ -8,60 +8,18 @@ import '../../../core/widgets/info_card.dart';
 import '../../../core/widgets/search_field.dart';
 import '../../progress/data/progress_models.dart';
 import '../../progress/data/progress_repository.dart';
+import '../data/lesson_models.dart';
+import '../data/lesson_repository.dart';
 import 'widgets/resume_banner.dart';
 import 'widgets/surah_list_tile.dart';
 
-/// Catalog metadata for a surah. This is NOT Quran verse text — only the name,
-/// number, meaning, ayah count, revelation place, and the Arabic *title*. It is
-/// keyed by the app's lesson id so the list joins onto `LessonProgress`.
-///
-/// Pilot scope (QF pre-live) is Al-Fatihah and Al-Baqarah; the catalog stays
-/// small and honest. Expand only as lessons are added.
-class _SurahEntry {
-  const _SurahEntry({
-    required this.lessonId,
-    required this.number,
-    required this.name,
-    required this.meaning,
-    required this.ayahCount,
-    required this.revelationPlace,
-    required this.arabicTitle,
-  });
-
-  final int lessonId;
-  final int number;
-  final String name;
-  final String meaning;
-  final int ayahCount;
-  final String revelationPlace; // 'Makki' | 'Madani'
-  final String arabicTitle;
-}
-
-const List<_SurahEntry> _surahCatalog = [
-  _SurahEntry(
-    lessonId: 1,
-    number: 1,
-    name: 'Al-Fatihah',
-    meaning: 'The Opening',
-    ayahCount: 7,
-    revelationPlace: 'Makki',
-    arabicTitle: 'الفاتحة',
-  ),
-  _SurahEntry(
-    lessonId: 2,
-    number: 2,
-    name: 'Al-Baqarah',
-    meaning: 'The Cow',
-    ayahCount: 286,
-    revelationPlace: 'Madani',
-    arabicTitle: 'البقرة',
-  ),
-];
-
 /// The **Read** tab (route `/surah`, design-mapping §2 screen 03). Lists the
-/// surahs available in the pilot, joining static catalog metadata with the
-/// learner's real `LessonProgress`, and routes each tap to `/reader/<lessonId>`.
-/// Entirely presentational — no new provider/API, no Quran verse text.
+/// published lessons fetched from `GET /lessons/` (fully backend-driven — no
+/// hardcoded surah metadata), joined with the learner's real `LessonProgress`,
+/// routing each tap to `/reader/<lessonId>`.
+///
+/// Adding a surah on the backend makes it appear here with no app change.
+/// Presentational only — no Quran verse text.
 class SurahSelectionScreen extends ConsumerStatefulWidget {
   const SurahSelectionScreen({super.key});
 
@@ -80,6 +38,7 @@ class _SurahSelectionScreenState extends ConsumerState<SurahSelectionScreen> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final summaryAsync = ref.watch(progressSummaryProvider);
+    final lessonsAsync = ref.watch(lessonsListProvider);
     final streak = summaryAsync.valueOrNull?.streak;
 
     return Scaffold(
@@ -89,12 +48,25 @@ class _SurahSelectionScreenState extends ConsumerState<SurahSelectionScreen> {
           children: [
             HudaayahTopBar(tab: 'Read', streakDays: streak),
             Expanded(
-              child: summaryAsync.when(
+              child: lessonsAsync.when(
                 loading: () =>
                     const Center(child: CircularProgressIndicator()),
-                error: (_, _) => _buildList(context, textTheme, const []),
-                data: (summary) =>
-                    _buildList(context, textTheme, summary.lessons),
+                error: (_, _) => _CatalogError(
+                  onRetry: () => ref.invalidate(lessonsListProvider),
+                ),
+                data: (catalog) => RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(lessonsListProvider);
+                    ref.invalidate(progressSummaryProvider);
+                    await ref.read(lessonsListProvider.future);
+                  },
+                  child: _buildList(
+                    context,
+                    textTheme,
+                    catalog,
+                    summaryAsync.valueOrNull?.lessons ?? const [],
+                  ),
+                ),
               ),
             ),
           ],
@@ -111,17 +83,18 @@ class _SurahSelectionScreenState extends ConsumerState<SurahSelectionScreen> {
   Widget _buildList(
     BuildContext context,
     TextTheme textTheme,
+    List<LessonSummary> catalog,
     List<LessonProgress> lessons,
   ) {
     final progress = _progressByLesson(lessons);
 
-    // Apply the search + revelation-place filter to catalog metadata only.
+    // Search + revelation-place filter on backend-provided metadata.
     final query = _query.trim().toLowerCase();
     final filter = _filters[_selectedFilter];
-    final visible = _surahCatalog.where((s) {
+    final visible = catalog.where((s) {
       final matchesQuery = query.isEmpty ||
-          s.name.toLowerCase().contains(query) ||
-          s.meaning.toLowerCase().contains(query);
+          s.surahNameEn.toLowerCase().contains(query) ||
+          s.surahMeaning.toLowerCase().contains(query);
       final matchesFilter = switch (filter) {
         'Makki' => s.revelationPlace == 'Makki',
         'Madani' => s.revelationPlace == 'Madani',
@@ -130,10 +103,10 @@ class _SurahSelectionScreenState extends ConsumerState<SurahSelectionScreen> {
       return matchesQuery && matchesFilter;
     }).toList();
 
-    // Most-recent in-progress lesson drives the resume banner (metadata only).
-    _SurahEntry? resumeEntry;
-    for (final s in _surahCatalog) {
-      final p = progress[s.lessonId];
+    // Resume banner: the first in-progress (not completed) lesson, by catalog order.
+    LessonSummary? resumeEntry;
+    for (final s in catalog) {
+      final p = progress[s.id];
       if (p != null && !p.isCompleted && p.state != 'not_started') {
         resumeEntry = s;
         break;
@@ -148,7 +121,6 @@ class _SurahSelectionScreenState extends ConsumerState<SurahSelectionScreen> {
           onChanged: (v) => setState(() => _query = v),
         ),
         const SizedBox(height: 16),
-        // FilterChipBar manages its own horizontal padding; cancel the list pad.
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 0),
           child: FilterChipBar(
@@ -160,28 +132,37 @@ class _SurahSelectionScreenState extends ConsumerState<SurahSelectionScreen> {
         const SizedBox(height: 16),
         if (resumeEntry != null) ...[
           ResumeBanner(
-            surahName: 'Surah ${resumeEntry.name}',
-            subtitle: '${resumeEntry.meaning} • ${resumeEntry.ayahCount} Ayahs',
-            onTap: () => context.go('/reader/${resumeEntry!.lessonId}'),
+            surahName: resumeEntry.displayName,
+            subtitle: '${resumeEntry.surahMeaning} • '
+                '${resumeEntry.surahAyahCount} Ayahs',
+            onTap: () => context.go('/reader/${resumeEntry!.id}'),
           ),
           const SizedBox(height: 16),
         ],
         Text('Sacred Chapters', style: textTheme.headlineSmall),
         const SizedBox(height: 12),
+        if (visible.isEmpty)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('No surahs match your search.',
+                  style: textTheme.bodyMedium),
+            ),
+          ),
         for (final s in visible) ...[
           Builder(builder: (_) {
-            final p = progress[s.lessonId];
+            final p = progress[s.id];
             final completed = p?.isCompleted ?? false;
             return SurahListTile(
-              number: s.number,
-              name: s.name,
-              meaning: s.meaning,
-              ayahCount: s.ayahCount,
+              number: s.surah,
+              name: s.surahNameEn.isNotEmpty ? s.surahNameEn : s.title,
+              meaning: s.surahMeaning,
+              ayahCount: s.surahAyahCount,
               revelationPlace: s.revelationPlace,
-              arabicTitle: s.arabicTitle,
+              arabicTitle: s.surahNameAr,
               completed: completed,
               progress: completed ? 1 : 0,
-              onTap: () => context.go('/reader/${s.lessonId}'),
+              onTap: () => context.go('/reader/${s.id}'),
             );
           }),
           const SizedBox(height: 12),
@@ -193,6 +174,25 @@ class _SurahSelectionScreenState extends ConsumerState<SurahSelectionScreen> {
           body:
               'A little every day keeps the heart connected. Return often, and '
               'let each visit be gentle.',
+        ),
+      ],
+    );
+  }
+}
+
+class _CatalogError extends StatelessWidget {
+  const _CatalogError({required this.onRetry});
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      children: [
+        const SizedBox(height: 120),
+        const Center(child: Text('Could not load the surah list.')),
+        const SizedBox(height: 12),
+        Center(
+          child: FilledButton(onPressed: onRetry, child: const Text('Retry')),
         ),
       ],
     );
