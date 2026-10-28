@@ -1,10 +1,13 @@
-"""Seed the Al-Fatihah lesson from seed/al_fatihah.json.
+"""Seed a surah lesson from a seed/*.json file.
 
 References QF resources by stable ID only — no Quran text is created here
 (quran-content-rules). Idempotent: safe to run repeatedly.
 
 By default the seeded lesson is left as DRAFT so it goes through the content
 review workflow (R9). Pass --publish to publish it immediately for dev testing.
+
+The seed file defaults to seed/al_fatihah.json; pass --file to load another,
+e.g. `seed_al_fatihah --file al_baqarah.json --publish`.
 """
 from __future__ import annotations
 
@@ -12,7 +15,7 @@ import json
 from pathlib import Path
 
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
@@ -22,7 +25,7 @@ from apps.lessons.models import ContentSource, Lesson
 
 
 class Command(BaseCommand):
-    help = "Seed the Al-Fatihah lesson (QF references only; no verse text)."
+    help = "Seed a surah lesson from a seed/*.json file (QF references only; no verse text)."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -30,10 +33,17 @@ class Command(BaseCommand):
             action="store_true",
             help="Publish the lesson immediately (dev convenience).",
         )
+        parser.add_argument(
+            "--file",
+            default="al_fatihah.json",
+            help="Seed filename under backend/seed/ (default: al_fatihah.json).",
+        )
 
     @transaction.atomic
     def handle(self, *args, **options):
-        seed_path = Path(settings.BASE_DIR) / "seed" / "al_fatihah.json"
+        seed_path = Path(settings.BASE_DIR) / "seed" / options["file"]
+        if not seed_path.exists():
+            raise CommandError(f"Seed file not found: {seed_path}")
         data = json.loads(seed_path.read_text())
 
         sources_by_ref: dict[str, ContentSource] = {}

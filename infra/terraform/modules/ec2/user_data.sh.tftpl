@@ -189,11 +189,14 @@ fi
 #    shared staticfiles volume by web's entrypoint on boot (nginx serves /static/).
 docker compose -f "$${COMPOSE_FILE}" exec -T web python manage.py migrate --noinput
 
-# 5b) Seed + publish the Al-Fatihah lesson. Idempotent (update_or_create), so running
+# 5b) Seed + publish the pilot lessons. Idempotent (update_or_create), so running
 #     on every deploy is safe and ensures content survives a fresh DB / instance
 #     recreation. Non-fatal: a seed failure must not abort an otherwise-good rollout.
+#     Pre-live QF provides surah 1 (Al-Fatihah) and surah 2 (Al-Baqarah) only.
 docker compose -f "$${COMPOSE_FILE}" exec -T web python manage.py seed_al_fatihah --publish \
-  || echo "WARNING: seed_al_fatihah failed; continuing."
+  || echo "WARNING: seed Al-Fatihah failed; continuing."
+docker compose -f "$${COMPOSE_FILE}" exec -T web python manage.py seed_al_fatihah --file al_baqarah.json --publish \
+  || echo "WARNING: seed Al-Baqarah failed; continuing."
 
 # 6) Prune dangling images.
 docker image prune -f

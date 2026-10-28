@@ -1,0 +1,85 @@
+{
+  "_note": "References QF resources by stable ID only. NO Quran text is stored here (quran-content-rules). Text/audio is fetched at runtime via the QF adapter. Pilot scope: Al-Baqarah opening (ayahs 1-5). Pre-live QF provides surah 1 and 2 only.",
+  "content_sources": [
+    {
+      "provider": "quran_foundation",
+      "resource_type": "translation",
+      "provider_ref": "85",
+      "language": "en",
+      "attribution": "M.A.S. Abdel Haleem",
+      "caching_policy_ref": "qf_max_1_week"
+    },
+    {
+      "provider": "quran_foundation",
+      "resource_type": "recitation",
+      "provider_ref": "7",
+      "language": "ar",
+      "attribution": "Mishary Rashid Alafasy",
+      "caching_policy_ref": "qf_max_1_week"
+    }
+  ],
+  "lesson": {
+    "title": "Surah Al-Baqarah (Opening)",
+    "order": 2,
+    "objectives": [
+      "Listen to and read the opening ayahs (1-5) of Al-Baqarah",
+      "Understand key vocabulary word-by-word",
+      "Begin memorizing the opening of the surah"
+    ],
+    "surah": 2,
+    "ayah_start": 1,
+    "ayah_end": 5,
+    "translation_provider_ref": "85",
+    "recitation_provider_ref": "7"
+  },
+  "exercises": [
+    {
+      "type": "multiple_choice",
+      "position": 1,
+      "config": {
+        "prompt": "In ayah 2:2, this Book is described as guidance for whom?",
+        "options": [
+          {"id": "a", "text": "Those who are mindful of God (al-muttaqīn)"},
+          {"id": "b", "text": "The wealthy"},
+          {"id": "c", "text": "The scholars only"},
+          {"id": "d", "text": "The rulers"}
+        ],
+        "vocab": [
+          {"content_ref": "root:h-d-y", "prompt": "ه-د-ي — relates to?"},
+          {"content_ref": "root:w-q-y", "prompt": "و-ق-ي — relates to?"}
+        ]
+      },
+      "content_references": {"verse_key": "2:2"},
+      "answer_key": {"correct_option_id": "a"}
+    },
+    {
+      "type": "multiple_choice",
+      "position": 2,
+      "config": {
+        "prompt": "In ayah 2:3, the mindful are described as those who believe in the unseen and do what?",
+        "options": [
+          {"id": "a", "text": "Keep up the prayer (ṣalāh)"},
+          {"id": "b", "text": "Travel often"},
+          {"id": "c", "text": "Write poetry"},
+          {"id": "d", "text": "Trade in markets"}
+        ],
+        "vocab": [
+          {"content_ref": "root:gh-y-b", "prompt": "غ-ي-ب — relates to?"},
+          {"content_ref": "root:s-l-w", "prompt": "ص-ل-و — relates to?"}
+        ]
+      },
+      "content_references": {"verse_key": "2:3"},
+      "answer_key": {"correct_option_id": "a"}
+    },
+    {
+      "type": "listening_recall",
+      "position": 3,
+      "config": {
+        "prompt": "Listen to ayah 2:5 and recite it from memory, then mark how you did.",
+        "verse_key": "2:5"
+      },
+      "content_references": {"verse_key": "2:5", "recitation_provider_ref": "7"},
+      "answer_key": {}
+    }
+  ]
+}
