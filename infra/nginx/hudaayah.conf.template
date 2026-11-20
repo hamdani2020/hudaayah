@@ -13,7 +13,7 @@ upstream hudaayah_web {
 server {
     listen 80;
     listen [::]:80;
-    server_name ${SERVER_NAME};
+    server_name ${SERVER_NAME} ${PRIVACY_SERVER_NAME};
 
     # Let's Encrypt HTTP-01 challenge files (written by the certbot container).
     location /.well-known/acme-challenge/ {
@@ -27,8 +27,8 @@ server {
 
 # ── Port 443: TLS termination + reverse proxy ────────────────────────────────────
 server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
     http2 on;
     server_name ${SERVER_NAME};
 
@@ -62,5 +62,43 @@ server {
         # Django (production.py) trusts this to detect the original HTTPS request.
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_redirect off;
+    }
+}
+
+# ── Port 443: public legal pages host (privacy / terms / delete-account) ─────────
+# Separate cert. Only the legal pages (and their static assets) are exposed here;
+# the API and admin are NOT reachable through this hostname.
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name ${PRIVACY_SERVER_NAME};
+
+    ssl_certificate     /etc/letsencrypt/live/${PRIVACY_SERVER_NAME}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${PRIVACY_SERVER_NAME}/privkey.pem;
+
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 1d;
+
+    # Bare hostname lands on the privacy policy.
+    location = / {
+        return 302 /privacy/;
+    }
+
+    location ~ ^/(privacy|terms|delete-account)/$ {
+        proxy_pass http://hudaayah_web;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+    }
+
+    location / {
+        return 404;
     }
 }

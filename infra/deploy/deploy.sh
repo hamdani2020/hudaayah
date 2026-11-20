@@ -33,7 +33,9 @@ APP_ENV_FILE="${APP_ENV_FILE:-/opt/hudaayah/app.env}"
 COMPOSE_FILE="infra/deploy/docker-compose.prod.yml"
 REF="${1:-$GIT_BRANCH}"
 
-export SERVER_NAME APP_ENV_FILE   # consumed by the compose file
+PRIVACY_SERVER_NAME="${PRIVACY_SERVER_NAME:-privacy.hudaayah.xyz}"
+
+export SERVER_NAME PRIVACY_SERVER_NAME APP_ENV_FILE   # consumed by the compose file
 
 # --- 1) Sync source -------------------------------------------------------------
 if [ ! -d "$APP_DIR/.git" ]; then
@@ -80,6 +82,27 @@ if ! compose run --rm --entrypoint sh certbot -c \
     --agree-tos --no-eff-email --non-interactive \
     --keep-until-expiring \
     && compose exec -T nginx nginx -s reload
+fi
+
+# --- 4b) Cert for the public legal-pages host (idempotent, NON-fatal) -----------
+# Needs the DNS A record for $PRIVACY_SERVER_NAME to resolve to this instance. If it does
+# not yet, issuance fails, nginx keeps its temporary self-signed cert, and the API deploy
+# continues unaffected.
+if ! compose run --rm --entrypoint sh certbot -c \
+      "test -f /etc/letsencrypt/renewal/$PRIVACY_SERVER_NAME.conf && openssl x509 -checkend 86400 -noout -in /etc/letsencrypt/live/$PRIVACY_SERVER_NAME/cert.pem" 2>/dev/null; then
+  echo "Requesting/renewing Let's Encrypt certificate for $PRIVACY_SERVER_NAME..."
+  compose run --rm --entrypoint sh certbot -c \
+    "rm -rf /etc/letsencrypt/live/$PRIVACY_SERVER_NAME /etc/letsencrypt/archive/$PRIVACY_SERVER_NAME /etc/letsencrypt/renewal/$PRIVACY_SERVER_NAME.conf" || true
+  if compose run --rm --entrypoint certbot certbot certonly \
+      --webroot -w /var/www/certbot \
+      -d "$PRIVACY_SERVER_NAME" \
+      --email "$LETSENCRYPT_EMAIL" \
+      --agree-tos --no-eff-email --non-interactive \
+      --keep-until-expiring; then
+    compose exec -T nginx nginx -s reload || true
+  else
+    echo "WARNING: certificate for $PRIVACY_SERVER_NAME failed (is its DNS record set?); continuing."
+  fi
 fi
 
 # --- 5) Migrations --------------------------------------------------------------

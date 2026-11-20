@@ -27,6 +27,11 @@ class AuthRepository {
   Future<void> logout() async {
     await _dio.post('/auth/logout/');
   }
+
+  /// Permanently deletes the authenticated user's account and data.
+  Future<void> deleteAccount() async {
+    await _dio.delete('/me/');
+  }
 }
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
