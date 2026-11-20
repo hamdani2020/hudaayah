@@ -205,20 +205,67 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _confirmDelete(BuildContext context) {
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete account?'),
-        content: const Text(
-            'This permanently removes your account and progress. This cannot be undone.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.error),
-            onPressed: () => Navigator.pop(ctx), // wired to endpoint in Phase 6
-            child: const Text('Delete'),
+      barrierDismissible: false,
+      builder: (ctx) {
+        var deleting = false;
+        String? error;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            title: const Text('Delete account?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                    'This permanently deletes your account and all your learning '
+                    'progress, XP and streak. This cannot be undone.'),
+                if (error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(error!, style: const TextStyle(color: AppTheme.error)),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: deleting ? null : () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: AppTheme.error),
+                onPressed: deleting
+                    ? null
+                    : () async {
+                        setDialogState(() {
+                          deleting = true;
+                          error = null;
+                        });
+                        try {
+                          await ref
+                              .read(authControllerProvider.notifier)
+                              .deleteAccount();
+                          if (ctx.mounted) Navigator.pop(ctx);
+                        } catch (_) {
+                          if (ctx.mounted) {
+                            setDialogState(() {
+                              deleting = false;
+                              error = 'We could not delete your account. '
+                                  'Please check your connection and try again.';
+                            });
+                          }
+                        }
+                      },
+                child: deleting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Delete'),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

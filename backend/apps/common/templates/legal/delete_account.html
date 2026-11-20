@@ -1,0 +1,34 @@
+{% extends "legal/base.html" %}
+{% block title %}Delete your account{% endblock %}
+{% block content %}
+<h1>Delete your Hudaayah account</h1>
+<p class="meta">Last updated: {{ last_updated }}</p>
+
+<h2>Delete it in the app (instant)</h2>
+<ol>
+  <li>Open Hudaayah and sign in.</li>
+  <li>Go to the <strong>Profile</strong> tab.</li>
+  <li>Tap <strong>Delete Account</strong>, then confirm <strong>Delete</strong>.</li>
+</ol>
+<p>Your account and data are permanently deleted immediately, and you are signed out. This
+cannot be undone.</p>
+
+<h2>Can't open the app?</h2>
+<p>If you no longer have the app installed, email
+<a href="mailto:{{ contact_email }}?subject=Delete%20my%20Hudaayah%20account">{{ contact_email }}</a>
+from the email address of the Google account you used with Hudaayah, with the subject
+"Delete my Hudaayah account". We will delete your account within 30 days of confirming the
+request.</p>
+
+<h2>What is deleted</h2>
+<ul>
+  <li>Your account profile (email, display name, profile picture URL).</li>
+  <li>Your lesson attempts, answers, progress, review schedule, XP, streak and daily activity.</li>
+  <li>Your sign-in sessions.</li>
+</ul>
+
+<h2>What may remain</h2>
+<p>Routine server backups and security logs (for example request time and IP address) may
+keep limited data for a short period until they expire. We do not use them to restore a
+deleted account. Deleting your account in Hudaayah does not delete your Google account.</p>
+{% endblock %}

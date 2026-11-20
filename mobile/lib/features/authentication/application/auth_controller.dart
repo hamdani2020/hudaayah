@@ -59,6 +59,23 @@ class AuthController extends AsyncNotifier<AuthState> {
     });
   }
 
+  /// Permanently deletes the account on the server, then signs out locally.
+  /// Throws if the server call fails, so the caller can show an error and the
+  /// user stays signed in (nothing is cleared locally on failure).
+  Future<void> deleteAccount() async {
+    await _repo.deleteAccount();
+    await _storage.clear();
+    try {
+      // Revoke the app's Google grant; fall back to a plain sign-out.
+      await GoogleSignIn.instance.disconnect();
+    } catch (_) {
+      try {
+        await GoogleSignIn.instance.signOut();
+      } catch (_) {}
+    }
+    state = const AsyncValue.data(AuthState());
+  }
+
   Future<void> logout() async {
     try {
       await _repo.logout();

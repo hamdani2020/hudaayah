@@ -1,0 +1,70 @@
+{% extends "legal/base.html" %}
+{% block title %}Privacy Policy{% endblock %}
+{% block content %}
+<h1>Privacy Policy</h1>
+<p class="meta">Last updated: {{ last_updated }}</p>
+
+<p>Hudaayah ("we", "the app") is a Quran learning app that helps you build a daily habit
+of studying the Quran through short lessons. This policy explains what information the app
+collects, why, and the choices you have.</p>
+
+<h2>Information we collect</h2>
+<ul>
+  <li><strong>Account information.</strong> When you sign in with Google, we receive your
+  Google account identifier, email address, display name and profile picture URL. We use
+  these to create and identify your account.</li>
+  <li><strong>Learning activity.</strong> Your lesson attempts, answers to exercises, scores,
+  completed lessons, review schedule, experience points (XP), streak, daily goal and daily
+  activity.</li>
+  <li><strong>Preferences.</strong> Settings you choose in the app.</li>
+  <li><strong>Session data.</strong> Sign-in session tokens. We store only hashed copies on
+  our servers. On your device they are kept in the platform's secure storage.</li>
+  <li><strong>Technical data.</strong> Standard server logs such as request time, request
+  ID and IP address, used for security and troubleshooting. We do not log sign-in tokens or
+  secrets.</li>
+</ul>
+<p>We do not collect your location, contacts, photos, microphone recordings or advertising
+identifiers.</p>
+
+<h2>How we use information</h2>
+<ul>
+  <li>To sign you in and keep your account secure.</li>
+  <li>To grade exercises, track progress, XP and streaks, and schedule reviews.</li>
+  <li>To maintain, secure and improve the app.</li>
+  <li>To respond to your messages.</li>
+</ul>
+<p>We do not sell your personal information, and we do not show advertising.</p>
+
+<h2>Third parties</h2>
+<ul>
+  <li><strong>Google Sign-In.</strong> Used to authenticate you. Google's own privacy policy
+  applies to that sign-in.</li>
+  <li><strong>Quran Foundation.</strong> Quran text, translations and audio come from the
+  Quran Foundation Content API. Our server requests this content; we do not send your
+  personal information with those requests. Audio files may be streamed to your device from
+  Quran Foundation's servers, which can see your device's IP address.</li>
+  <li><strong>Hosting.</strong> Our servers and database run on Amazon Web Services.</li>
+</ul>
+<p>We share information with authorities only if the law requires it.</p>
+
+<h2>Security</h2>
+<p>Data is sent over HTTPS (TLS 1.2 or later). Access to our systems is limited and secrets
+are kept outside the app. No system is perfectly secure, but we work to protect your data.</p>
+
+<h2>Retention and deletion</h2>
+<p>We keep your account and learning data while your account is active. You can delete
+your account and associated data yourself at any time from the Profile screen in the app
+(Delete Account), or ask us to; see
+<a href="{% url 'legal-delete-account' %}">how to delete your account</a>.</p>
+
+<h2>Children</h2>
+<p>Hudaayah is not directed to children under 13, and we do not knowingly collect their
+personal information. If you believe a child has provided us data, contact us and we will
+delete it.</p>
+
+<h2>Changes</h2>
+<p>We may update this policy. The date above shows the latest version.</p>
+
+<h2>Contact</h2>
+<p>Questions or requests: <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.</p>
+{% endblock %}

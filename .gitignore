@@ -3,8 +3,8 @@
 # ──────────────────────────────────────────────────────────────
 # Kiro MCP config holds a live Google OAuth bearer token (Stitch) +
 # other credentials. Keep it local only.
-.kiro/settings/mcp.json
-**/mcp.json
+# .kiro/settings/mcp.json
+# **/mcp.json
 
 # Environment / credential files
 .env

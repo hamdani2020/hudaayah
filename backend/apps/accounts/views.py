@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -77,3 +78,14 @@ class MeView(APIView):
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+    def delete(self, request):
+        """DELETE /me/ — permanently delete the caller's account and all their data.
+
+        Only ever acts on `request.user` (no user id in the URL), so ownership is implicit.
+        Sessions, attempts, answers, progress, daily activity and review items are removed
+        by ON DELETE CASCADE, atomically.
+        """
+        with transaction.atomic():
+            request.user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
