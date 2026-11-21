@@ -13,8 +13,8 @@ import 'package:google_fonts/google_fonts.dart';
 ///
 /// NOTE: Quran Arabic ayat are rendered with the `UthmanicHafs` font family
 /// (see [AppTextStyles.arabicAyahLg] / [AppTextStyles.arabicAyahSm] and
-/// assets/fonts/README.md). The .ttf is intentionally absent; Flutter falls
-/// back gracefully. Do NOT add that font to pubspec.
+/// assets/fonts/README.md). The KFGQPC .ttf is bundled and registered in
+/// pubspec.yaml; pair it with QF `text_qpc_hafs` text.
 class AppTheme {
   const AppTheme._();
 

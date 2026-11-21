@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,11 +78,13 @@ class SignInScreen extends ConsumerWidget {
                   : () => ref.read(authControllerProvider.notifier).signInWithGoogle(),
             ),
             const SizedBox(height: 12),
-            const AuthProviderButton(
-              leading: Icon(Icons.apple, size: 22, color: AppTheme.onSurface),
-              label: 'Continue with Apple (coming soon)',
-              onPressed: null, // Apple — wired in a later task.
-            ),
+            // Apple Sign-In is not built yet; hide the placeholder on Android.
+            if (defaultTargetPlatform != TargetPlatform.android)
+              const AuthProviderButton(
+                leading: Icon(Icons.apple, size: 22, color: AppTheme.onSurface),
+                label: 'Continue with Apple (coming soon)',
+                onPressed: null, // Apple — wired in a later task.
+              ),
             const SizedBox(height: 28),
             const InfoCard(
               icon: Icons.lock_outline,

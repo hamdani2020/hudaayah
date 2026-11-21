@@ -38,7 +38,12 @@ def build_lesson_content(lesson: Lesson) -> dict:
         # Layer 1 — Arabic + word-by-word (sacred; never altered).
         wbw = client.get_word_by_word(verse_key)
         verse = (wbw or {}).get("verse", {})
-        entry["arabic"] = verse.get("text_uthmani") or verse.get("text_indopak")
+        # Prefer QPC Hafs text: it is encoded for the bundled UthmanicHafs font.
+        entry["arabic"] = (
+            verse.get("text_qpc_hafs")
+            or verse.get("text_uthmani")
+            or verse.get("text_indopak")
+        )
         entry["words"] = _extract_words(verse.get("words", []))
 
         # Layer 2 — translation (attributed, labeled).
@@ -72,7 +77,7 @@ def _extract_words(words: list) -> list[dict]:
     out = []
     for w in words or []:
         out.append({
-            "arabic": w.get("text_uthmani") or w.get("text"),
+            "arabic": w.get("text_qpc_hafs") or w.get("text_uthmani") or w.get("text"),
             "translation": (w.get("translation") or {}).get("text"),
             "transliteration": (w.get("transliteration") or {}).get("text"),
         })

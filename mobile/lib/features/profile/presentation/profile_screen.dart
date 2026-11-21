@@ -179,6 +179,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
+                          AppConfig.fontAttribution,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelSmall
+                              ?.copyWith(color: AppTheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
                           'Hudaayah • Built with reverence & care',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.labelSmall

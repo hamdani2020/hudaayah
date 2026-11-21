@@ -160,12 +160,15 @@ class QuranFoundationClient:
 
     def get_word_by_word(self, verse_key: str) -> dict:
         return self._cached_get(
-            f"qf:wbw:{verse_key}",
+            # v2: adds text_qpc_hafs, the QF text that matches the bundled
+            # UthmanicHafs font (QF font-rendering guide). New key so old cache
+            # entries without the field are not reused.
+            f"qf:wbw:v2:{verse_key}",
             f"verses/by_key/{verse_key}",
             {
                 "words": "true",
-                "fields": "text_uthmani",
-                "word_fields": "text_uthmani,transliteration",
+                "fields": "text_qpc_hafs,text_uthmani",
+                "word_fields": "text_qpc_hafs,text_uthmani,transliteration",
             },
         )
 

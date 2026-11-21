@@ -1,29 +1,23 @@
-# Quran font (Uthmani)
+# Quran font (Uthmanic Hafs)
 
-The reader renders ayat with the font family `UthmanicHafs`
-(`lib/features/quran_reader/presentation/ayah_card.dart`).
+`UthmanicHafs.ttf` is **KFGQPC Uthmanic Script HAFS, version 18**
+(`UthmanicHafs1Ver18.ttf`), copyright King Fahd Glorious Quran Printing Complex.
 
-## To enable the proper Uthmani face
+- Source: Quran Foundation's font host, as documented in the QF font-rendering guide
+  https://api-docs.quran.foundation/docs/tutorials/fonts/font-rendering/
+  (`https://verses.quran.foundation/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.ttf`)
+- SHA-256: `a0636e68e375af9552470d67773936f54d536e6586ce2608311b2fe7f9cbec3a`
+- Registered in `mobile/pubspec.yaml` as family `UthmanicHafs`.
 
-1. Obtain the licensed **KFGQPC Uthmanic Hafs** font (King Fahd Glorious Quran
-   Printing Complex). Per steering (tech.md), Quran fonts **may** be bundled with
-   attribution and an active Quran Foundation Developer Console account.
-2. Place the file here as:
-   ```
-   assets/fonts/UthmanicHafs.ttf
-   ```
-3. Uncomment the `fonts:` block in `mobile/pubspec.yaml`, then:
-   ```
-   flutter pub get
-   ```
-
-## Until the font is added
-
-The build intentionally does **not** reference a missing asset (the `fonts:` block
-is commented out), so `flutter pub get` and `flutter run` work. The ayah text falls
-back to the default system font — Arabic still renders RTL with correct diacritics,
-just not in the Uthmani typeface.
+## Text pairing
+This font is designed for QF's `text_qpc_hafs` field. The backend requests
+`text_qpc_hafs` (falling back to `text_uthmani`) in
+`backend/apps/quran_content/client.py` and `backend/apps/lessons/services.py`.
+If you change the font version, re-check the pairing; mismatched versions can
+render some marks incorrectly.
 
 ## Rules
-- Never alter, subset-in-a-way-that-corrupts, or modify the Quran glyphs.
-- Keep attribution for the font per its license and QF terms.
+- Do not modify, subset or re-encode the font file.
+- Keep the KFGQPC credit (shown in the app's attribution / About section).
+- Bundling is permitted per project steering (tech.md) with attribution and an
+  active Quran Foundation Developer Console account.

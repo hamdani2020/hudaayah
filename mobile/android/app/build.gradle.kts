@@ -23,11 +23,25 @@ gradle.taskGraph.whenReady {
         it.name.contains("Release") &&
             (it.name.startsWith("assemble") || it.name.startsWith("bundle") || it.name.startsWith("package"))
     }
-    if (isReleaseBuild && !keystorePropertiesFile.exists()) {
-        throw GradleException(
-            "Release signing is not configured: create android/key.properties " +
-                "(storePassword, keyPassword, keyAlias, storeFile). See .kiro/specs/play-console-readiness."
-        )
+    if (isReleaseBuild) {
+        if (!keystorePropertiesFile.exists()) {
+            throw GradleException(
+                "Release signing is not configured: create android/key.properties " +
+                    "(storePassword, keyPassword, keyAlias, storeFile). See .kiro/specs/play-console-readiness."
+            )
+        }
+        val required = listOf("storePassword", "keyPassword", "keyAlias", "storeFile")
+        val missing = required.filter { keystoreProperties.getProperty(it).isNullOrBlank() }
+        if (missing.isNotEmpty()) {
+            throw GradleException(
+                "android/key.properties is missing: ${missing.joinToString()}. " +
+                    "Is the file saved?"
+            )
+        }
+        val store = file(keystoreProperties.getProperty("storeFile"))
+        if (!store.exists()) {
+            throw GradleException("Keystore not found at storeFile path: ${store.path}")
+        }
     }
 }
 

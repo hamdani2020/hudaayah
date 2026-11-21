@@ -40,4 +40,8 @@ class AppConfig {
 
   /// Visible Quran Foundation attribution (required by QF terms).
   static const String qfAttribution = 'Quran content provided by Quran Foundation';
+
+  /// Credit for the bundled Quran font (KFGQPC Uthmanic Script HAFS).
+  static const String fontAttribution =
+      'Quran font: KFGQPC Uthmanic Script HAFS, King Fahd Glorious Quran Printing Complex';
 }
