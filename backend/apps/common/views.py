@@ -14,6 +14,24 @@ class HealthView(APIView):
         return Response({"status": "ok"})
 
 
+class LandingPageView(TemplateView):
+    """Public marketing page for app.hudaayah.xyz. No auth, no DB, no QF calls."""
+
+    template_name = "landing/index.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        legal = settings.LEGAL_BASE_URL.rstrip("/")
+        context.update(
+            play_store_url=settings.PLAY_STORE_URL,
+            contact_email=settings.CONTACT_EMAIL,
+            privacy_url=f"{legal}/privacy/",
+            terms_url=f"{legal}/terms/",
+            delete_account_url=f"{legal}/delete-account/",
+        )
+        return context
+
+
 class LegalPageView(TemplateView):
     """Public, static legal pages (privacy, terms, account deletion). No auth, no DB."""
 

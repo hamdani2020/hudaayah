@@ -9,6 +9,7 @@
 # points --env-file at the SSM-derived app.env):
 #   SERVER_NAME     public hostname nginx serves (e.g. api.hudaayah.xyz)
 #   PRIVACY_SERVER_NAME  hostname for the public legal pages (default privacy.hudaayah.xyz)
+#   APP_SERVER_NAME      hostname for the public landing page (default app.hudaayah.xyz)
 #   APP_ENV_FILE    path to the runtime env file built from SSM (default /opt/hudaayah/app.env)
 
 # Fixed project name so the stack is identified as "hudaayah" regardless of the directory
@@ -64,6 +65,7 @@ services:
     environment:
       SERVER_NAME: ${SERVER_NAME:?SERVER_NAME is required}
       PRIVACY_SERVER_NAME: ${PRIVACY_SERVER_NAME:-privacy.hudaayah.xyz}
+      APP_SERVER_NAME: ${APP_SERVER_NAME:-app.hudaayah.xyz}
     ports:
       - "80:80"
       - "443:443"
