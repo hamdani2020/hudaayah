@@ -3,11 +3,13 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
-from apps.common.views import LegalPageView
+from apps.common.views import LandingPageView, LegalPageView
 
 api = settings.API_PREFIX
 
 urlpatterns = [
+    # Public landing page (served on app.hudaayah.xyz).
+    path("", LandingPageView.as_view(), name="landing"),
     path("admin/", admin.site.urls),
     # Public legal pages (served on privacy.hudaayah.xyz; also reachable on any allowed host).
     path("privacy/", LegalPageView.as_view(template_name="legal/privacy.html"), name="legal-privacy"),

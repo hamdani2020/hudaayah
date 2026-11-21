@@ -1,0 +1,227 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hudaayah · Build a daily habit with the Quran</title>
+  <meta name="description" content="Hudaayah is a free Quran learning app with short daily lessons, word-by-word meaning, listening practice and gentle reviews.">
+  <link rel="canonical" href="https://app.hudaayah.xyz/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Hudaayah · Build a daily habit with the Quran">
+  <meta property="og:description" content="Short daily lessons, word-by-word meaning, listening practice and gentle reviews. Free, with no ads.">
+  <meta property="og:url" content="https://app.hudaayah.xyz/">
+  <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'landing/icon-512.png' %}">
+  <meta name="theme-color" content="#0F3E36">
+  <link rel="icon" type="image/png" href="{% static 'landing/favicon.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'landing/icon-180.png' %}">
+  <link rel="stylesheet" href="{% static 'landing/landing.css' %}">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-row">
+    <a class="brand" href="#top" aria-label="Hudaayah home">
+      <img src="{% static 'landing/icon-180.png' %}" alt="" width="40" height="40">
+      <span>Hudaayah</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#screens">Screens</a>
+    </nav>
+    {% if play_store_url %}
+      <a class="btn btn-small" href="{{ play_store_url }}" rel="noopener">Get the app</a>
+    {% endif %}
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">Quran learning, a few minutes a day</p>
+        <h1>Build a daily habit with the Quran.</h1>
+        <p class="lead">Hudaayah helps you understand and remember the Quran through short,
+        gentle lessons. Read each ayah with its translation, learn it word by word, listen to the
+        recitation, and review what you learned when it is due.</p>
+        <div class="cta-row">
+          {% if play_store_url %}
+            <a class="btn btn-play" href="{{ play_store_url }}" rel="noopener">
+              <svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22"><path fill="currentColor" d="M4 2.8v18.4c0 .5.5.8.9.6l15.9-9.2c.4-.2.4-.9 0-1.1L4.9 2.2c-.4-.2-.9.1-.9.6z"/></svg>
+              <span><small>Get it on</small>Google Play</span>
+            </a>
+          {% else %}
+            <span class="btn btn-play is-soon" aria-disabled="true">
+              <svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22"><path fill="currentColor" d="M4 2.8v18.4c0 .5.5.8.9.6l15.9-9.2c.4-.2.4-.9 0-1.1L4.9 2.2c-.4-.2-.9.1-.9.6z"/></svg>
+              <span><small>Coming soon to</small>Google Play</span>
+            </span>
+          {% endif %}
+          <a class="btn btn-ghost" href="#how">See how it works</a>
+        </div>
+        <ul class="pills" aria-label="Highlights">
+          <li>Free</li>
+          <li>No ads</li>
+          <li>Quran content from Quran Foundation</li>
+        </ul>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <img class="phone phone-back" src="{% static 'landing/onboarding.jpeg' %}" alt="" width="540" height="1212">
+        <img class="phone phone-front" src="{% static 'landing/home.jpeg' %}" alt="" width="540" height="1212">
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="section">
+    <div class="wrap">
+      <h2 class="section-title">Made for steady, daily learning</h2>
+      <p class="section-lead">Whether you are learning the meaning or working on memorization,
+      each lesson takes a few minutes and builds on the last.</p>
+      <div class="cards">
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">📖</div>
+          <h3>Short daily lessons</h3>
+          <p>Each lesson covers a few ayat, so it fits into a busy day.</p>
+        </article>
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">🔤</div>
+          <h3>Word by word</h3>
+          <p>See each word with its meaning and transliteration, alongside the full translation.</p>
+        </article>
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">🎧</div>
+          <h3>Listen and repeat</h3>
+          <p>Play the recitation for each ayah and loop it as many times as you need.</p>
+        </article>
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">🔁</div>
+          <h3>Gentle reviews</h3>
+          <p>Words you have learned come back for review just before you are likely to forget them.</p>
+        </article>
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">🔥</div>
+          <h3>Your own pace</h3>
+          <p>A streak and XP help you keep the habit. They are personal, with no leaderboards or comparisons.</p>
+        </article>
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">🌿</div>
+          <h3>Encouraging, never harsh</h3>
+          <p>Mistakes are part of learning. Feedback is kind and points you to try again.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how" class="section section-tint">
+    <div class="wrap">
+      <h2 class="section-title">How it works</h2>
+      <ol class="steps">
+        <li>
+          <span class="step-num">1</span>
+          <div><h3>Sign in with Google</h3>
+          <p>Your progress is saved to your account, so you can pick up where you left off.</p></div>
+        </li>
+        <li>
+          <span class="step-num">2</span>
+          <div><h3>Read and listen</h3>
+          <p>Start a lesson with the ayah in Arabic, its translation, and the recitation.</p></div>
+        </li>
+        <li>
+          <span class="step-num">3</span>
+          <div><h3>Practice</h3>
+          <p>Answer short exercises: choose the meaning, put the words in order, and recall what you heard.</p></div>
+        </li>
+        <li>
+          <span class="step-num">4</span>
+          <div><h3>Review</h3>
+          <p>Come back each day to review words that are due and continue your journey.</p></div>
+        </li>
+      </ol>
+      <p class="note">Hudaayah starts with Surah Al-Fatihah and the opening ayat of Surah
+      Al-Baqarah. More surahs are planned.</p>
+    </div>
+  </section>
+
+  <!-- Screens -->
+  <section id="screens" class="section">
+    <div class="wrap">
+      <h2 class="section-title">A look inside</h2>
+      <div class="gallery">
+        <figure>
+          <img src="{% static 'landing/onboarding.jpeg' %}" alt="Hudaayah welcome screen: Your journey with the Quran" loading="lazy" width="540" height="1212">
+          <figcaption>Begin your journey</figcaption>
+        </figure>
+        <figure>
+          <img src="{% static 'landing/home.jpeg' %}" alt="Home screen showing today's lesson and learning journey" loading="lazy" width="540" height="1212">
+          <figcaption>Today's lesson at a glance</figcaption>
+        </figure>
+        <figure>
+          <img src="{% static 'landing/read.jpeg' %}" alt="Read screen listing surahs with their progress" loading="lazy" width="540" height="1212">
+          <figcaption>Read surah by surah</figcaption>
+        </figure>
+        <figure>
+          <img src="{% static 'landing/learn.jpeg' %}" alt="Review screen asking you to recall a word's meaning" loading="lazy" width="540" height="1212">
+          <figcaption>Review what you learned</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust -->
+  <section class="section section-dark">
+    <div class="wrap trust">
+      <div>
+        <h2>Respect for the Quran comes first</h2>
+        <p>The Arabic text, translations and recitations come from
+        <a href="https://quran.foundation" rel="noopener">Quran Foundation</a> and are shown
+        exactly as provided. Translations are always labeled as translations. Our lessons and
+        exercises are kept clearly separate from the Quran text.</p>
+      </div>
+      <ul class="trust-list">
+        <li>No ads and no selling of your data</li>
+        <li>Sign in with Google; no passwords to manage</li>
+        <li>Delete your account from the app at any time</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="section final">
+    <div class="wrap final-inner">
+      <img src="{% static 'landing/icon-180.png' %}" alt="" width="72" height="72">
+      <h2>Start with one ayah today.</h2>
+      {% if play_store_url %}
+        <a class="btn btn-play" href="{{ play_store_url }}" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22"><path fill="currentColor" d="M4 2.8v18.4c0 .5.5.8.9.6l15.9-9.2c.4-.2.4-.9 0-1.1L4.9 2.2c-.4-.2-.9.1-.9.6z"/></svg>
+          <span><small>Get it on</small>Google Play</span>
+        </a>
+      {% else %}
+        <p class="soon-text">Hudaayah is in testing and is coming soon to Google Play.</p>
+      {% endif %}
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-row">
+    <div>
+      <p class="footer-brand">Hudaayah</p>
+      <p>Quran content provided by <a href="https://quran.foundation" rel="noopener">Quran Foundation</a>.</p>
+      <p>Quran font: KFGQPC Uthmanic Script HAFS, King Fahd Glorious Quran Printing Complex.</p>
+    </div>
+    <nav class="footer-links" aria-label="Legal">
+      <a href="{{ privacy_url }}">Privacy Policy</a>
+      <a href="{{ terms_url }}">Terms of Use</a>
+      <a href="{{ delete_account_url }}">Delete account</a>
+      <a href="mailto:{{ contact_email }}">Contact</a>
+    </nav>
+  </div>
+  <div class="wrap copyright">© {% now "Y" %} Hudaayah</div>
+</footer>
+
+</body>
+</html>

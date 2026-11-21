@@ -22,6 +22,12 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.
 # Shown on the public legal pages.
 CONTACT_EMAIL = env("CONTACT_EMAIL", default="hamdanialhassangandi2020@gmail.com")
 
+# Public landing page (app.hudaayah.xyz).
+# Leave PLAY_STORE_URL empty until the app is public on Google Play; the page then
+# shows "Coming soon to Google Play" instead of a link.
+PLAY_STORE_URL = env("PLAY_STORE_URL", default="")
+LEGAL_BASE_URL = env("LEGAL_BASE_URL", default="https://privacy.hudaayah.xyz")
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
