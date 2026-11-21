@@ -28,6 +28,20 @@ class AppConfig {
         '351213424423-aeicjvu1do70e17lugh4a7r597r5bbd5.apps.googleusercontent.com',
   );
 
+  /// Public legal pages (served by Django on privacy.hudaayah.xyz).
+  static const String privacyPolicyUrl = String.fromEnvironment(
+    'PRIVACY_POLICY_URL',
+    defaultValue: 'https://privacy.hudaayah.xyz/privacy/',
+  );
+  static const String termsUrl = String.fromEnvironment(
+    'TERMS_URL',
+    defaultValue: 'https://privacy.hudaayah.xyz/terms/',
+  );
+
   /// Visible Quran Foundation attribution (required by QF terms).
   static const String qfAttribution = 'Quran content provided by Quran Foundation';
+
+  /// Credit for the bundled Quran font (KFGQPC Uthmanic Script HAFS).
+  static const String fontAttribution =
+      'Quran font: KFGQPC Uthmanic Script HAFS, King Fahd Glorious Quran Printing Complex';
 }
