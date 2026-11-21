@@ -31,6 +31,8 @@
     </nav>
     {% if play_store_url %}
       <a class="btn btn-small" href="{{ play_store_url }}" rel="noopener">Get the app</a>
+    {% elif tester_form_action %}
+      <a class="btn btn-small" href="#join">Join the test</a>
     {% endif %}
   </div>
 </header>
@@ -51,6 +53,11 @@
             <a class="btn btn-play" href="{{ play_store_url }}" rel="noopener">
               <svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22"><path fill="currentColor" d="M4 2.8v18.4c0 .5.5.8.9.6l15.9-9.2c.4-.2.4-.9 0-1.1L4.9 2.2c-.4-.2-.9.1-.9.6z"/></svg>
               <span><small>Get it on</small>Google Play</span>
+            </a>
+          {% elif tester_form_action %}
+            <a class="btn btn-play" href="#join">
+              <svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22"><path fill="currentColor" d="M4 2.8v18.4c0 .5.5.8.9.6l15.9-9.2c.4-.2.4-.9 0-1.1L4.9 2.2c-.4-.2-.9.1-.9.6z"/></svg>
+              <span><small>Android testing is open</small>Join the test</span>
             </a>
           {% else %}
             <span class="btn btn-play is-soon" aria-disabled="true">
@@ -188,17 +195,49 @@
     </div>
   </section>
 
-  <!-- Final CTA -->
-  <section class="section final">
+  <!-- Final CTA / tester sign-up -->
+  <section id="join" class="section final">
     <div class="wrap final-inner">
       <img src="{% static 'landing/icon-180.png' %}" alt="" width="72" height="72">
-      <h2>Start with one ayah today.</h2>
       {% if play_store_url %}
+        <h2>Start with one ayah today.</h2>
         <a class="btn btn-play" href="{{ play_store_url }}" rel="noopener">
           <svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22"><path fill="currentColor" d="M4 2.8v18.4c0 .5.5.8.9.6l15.9-9.2c.4-.2.4-.9 0-1.1L4.9 2.2c-.4-.2-.9.1-.9.6z"/></svg>
           <span><small>Get it on</small>Google Play</span>
         </a>
+      {% elif tester_form_action %}
+        <h2>Help us test Hudaayah</h2>
+        <p class="join-lead">Hudaayah is in testing on Android. Leave your name and email and
+        we'll send you an invite to try it on Google Play.</p>
+
+        <form id="join-form" class="join-form" action="{{ tester_form_action }}" method="POST">
+          <label class="field">
+            <span>Name</span>
+            <input type="text" name="{{ tester_form_name_field }}" autocomplete="name"
+                   maxlength="120" required placeholder="Your name">
+          </label>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" name="{{ tester_form_email_field }}" autocomplete="email"
+                   maxlength="254" required placeholder="you@gmail.com"
+                   aria-describedby="join-email-hint">
+            <small id="join-email-hint">Use the Google account email you use on your Android
+            phone. Google Play only lets that account join the test.</small>
+          </label>
+          <button type="submit" class="btn btn-primary">Join the test</button>
+          <p id="join-error" class="join-error" role="alert" hidden>We couldn't send your
+          details. Please check your connection and try again.</p>
+          <p class="join-privacy">Your details go to our Google Form and are used only to
+          invite you to the test. See our <a href="{{ privacy_url }}">Privacy Policy</a>.</p>
+        </form>
+
+        <div id="join-thanks" class="join-thanks" tabindex="-1" role="status" hidden>
+          <h3>JazakAllahu khairan!</h3>
+          <p>You're on the list. We'll email your invite to join the test on Google Play.</p>
+        </div>
+        <iframe id="join-sink" name="join-sink" title="Form submission" hidden></iframe>
       {% else %}
+        <h2>Start with one ayah today.</h2>
         <p class="soon-text">Hudaayah is in testing and is coming soon to Google Play.</p>
       {% endif %}
     </div>
@@ -222,6 +261,10 @@
   </div>
   <div class="wrap copyright">© {% now "Y" %} Hudaayah</div>
 </footer>
+
+{% if tester_form_action and not play_store_url %}
+<script src="{% static 'landing/join.js' %}" defer></script>
+{% endif %}
 
 </body>
 </html>

@@ -28,6 +28,15 @@ CONTACT_EMAIL = env("CONTACT_EMAIL", default="hamdanialhassangandi2020@gmail.com
 PLAY_STORE_URL = env("PLAY_STORE_URL", default="")
 LEGAL_BASE_URL = env("LEGAL_BASE_URL", default="https://privacy.hudaayah.xyz")
 
+# Tester sign-up on the landing page. The browser posts straight to this Google Form;
+# Django never receives or stores the name/email. Field IDs come from the form's
+# "Get pre-filled link" URL. Set TESTER_FORM_ID to "" to hide the sign-up section.
+TESTER_FORM_ID = env(
+    "TESTER_FORM_ID", default="1FAIpQLSfq8IVLI2oN0FB2Fj2QNLajBxaJqWeA4JqsrERjxFu09oYY0Q"
+)
+TESTER_FORM_NAME_FIELD = env("TESTER_FORM_NAME_FIELD", default="entry.284853524")
+TESTER_FORM_EMAIL_FIELD = env("TESTER_FORM_EMAIL_FIELD", default="entry.363526193")
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
