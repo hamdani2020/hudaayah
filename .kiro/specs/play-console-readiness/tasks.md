@@ -1,13 +1,13 @@
 # Tasks — Play Console Readiness
 
 ## Kiro tasks (code and config)
-- [ ] K1 Add release signing config reading `android/key.properties`; fail if missing. (R1)
-- [ ] K2 Add `INTERNET` permission to main manifest; set app label to "Hudaayah". (R2, R4)
-- [ ] K3 Add `privacyPolicyUrl` / `termsUrl` to `AppConfig` and the dart-define files. (R5)
-- [ ] K4 Add `url_launcher`; wire Profile tiles and Sign-in text links. (R5)
+- [x] K1 Add release signing config reading `android/key.properties`; fail if missing. (R1)
+- [x] K2 Add `INTERNET` permission to main manifest; set app label to "Hudaayah". (R2, R4)
+- [x] K3 Add `privacyPolicyUrl` / `termsUrl` to `AppConfig` and the dart-define files. (R5)
+- [x] K4 Add `url_launcher`; wire Profile tiles and Sign-in text links. (R5)
 - [ ] K5 Release guard: refuse cleartext `http://` API base URL in release mode. (R3)
 - [ ] K6 Hide Apple button on Android. (R6)
-- [ ] K7 Update `pubspec` description; set up `flutter_launcher_icons` once the icon exists. (R4)
+- [x] K7 Update `pubspec` description; set up `flutter_launcher_icons` once the icon exists. (R4)
 - [ ] K8 Register the Quran font in `pubspec.yaml` once the file exists. (R7)
 - [ ] K9 Run `flutter analyze`, then build the release `.aab` and verify it is signed with
       the upload key (`keytool -printcert -jarfile`). (R1, R8)
@@ -26,7 +26,7 @@
       -keyalg RSA -keysize 2048 -validity 10000 -alias upload`), back it up, and create
       `android/key.properties`.
 - [ ] O2 Decide the final application ID (permanent after first upload).
-- [ ] O3 Provide a 1024x1024 app icon (and optional adaptive foreground/background).
+- [x] O3 Provide a 1024x1024 app icon (and optional adaptive foreground/background).
 - [ ] O4 Review and approve the Privacy Policy and Terms text drafted in K10 (host:
       `privacy.hudaayah.xyz`, contact: hamdanialhassangandi2020@gmail.com).
 - [ ] O4a DNS: add an A record `privacy.hudaayah.xyz` -> the same Elastic IP as `api`.

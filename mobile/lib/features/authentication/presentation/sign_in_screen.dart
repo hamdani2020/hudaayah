@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../../../app/theme.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/errors/api_exception.dart';
+import '../../../core/utils/external_link.dart';
 import '../../../core/widgets/buttons.dart';
 import '../../../core/widgets/info_card.dart';
 import '../application/auth_controller.dart';
@@ -88,28 +90,66 @@ class SignInScreen extends ConsumerWidget {
                   'No ads, no commercial tracking.',
             ),
             const SizedBox(height: 24),
-            Text.rich(
-              TextSpan(
-                style: theme.textTheme.labelSmall,
-                children: const [
-                  TextSpan(text: "By continuing, you agree to Hudaayah's "),
-                  TextSpan(
-                      text: 'Terms of Service',
-                      style: TextStyle(fontWeight: FontWeight.w700)),
-                  TextSpan(text: ' and acknowledge our '),
-                  TextSpan(
-                      text: 'Privacy Policy.',
-                      style: TextStyle(fontWeight: FontWeight.w700)),
-                ],
-              ),
-              textAlign: TextAlign.center,
-            ),
+            const _LegalLinks(),
             const SizedBox(height: 16),
             Center(child: Text(AppConfig.qfAttribution,
                 style: theme.textTheme.labelSmall)),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// "By continuing…" line with tappable Terms and Privacy Policy links. Stateful
+/// only to own (and dispose) the tap recognizers.
+class _LegalLinks extends StatefulWidget {
+  const _LegalLinks();
+
+  @override
+  State<_LegalLinks> createState() => _LegalLinksState();
+}
+
+class _LegalLinksState extends State<_LegalLinks> {
+  late final TapGestureRecognizer _terms;
+  late final TapGestureRecognizer _privacy;
+
+  @override
+  void initState() {
+    super.initState();
+    _terms = TapGestureRecognizer()
+      ..onTap = () => openExternalLink(context, AppConfig.termsUrl);
+    _privacy = TapGestureRecognizer()
+      ..onTap = () => openExternalLink(context, AppConfig.privacyPolicyUrl);
+  }
+
+  @override
+  void dispose() {
+    _terms.dispose();
+    _privacy.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.labelSmall;
+    final linkStyle = style?.copyWith(
+      fontWeight: FontWeight.w700,
+      color: AppTheme.primary,
+      decoration: TextDecoration.underline,
+    );
+    return Text.rich(
+      TextSpan(
+        style: style,
+        children: [
+          const TextSpan(text: "By continuing, you agree to Hudaayah's "),
+          TextSpan(text: 'Terms of Service', style: linkStyle, recognizer: _terms),
+          const TextSpan(text: ' and acknowledge our '),
+          TextSpan(text: 'Privacy Policy', style: linkStyle, recognizer: _privacy),
+          const TextSpan(text: '.'),
+        ],
+      ),
+      textAlign: TextAlign.center,
     );
   }
 }

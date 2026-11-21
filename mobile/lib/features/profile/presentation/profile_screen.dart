@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/utils/external_link.dart';
 import '../../../core/widgets/hudaayah_top_bar.dart';
 import '../../../core/widgets/stat_card.dart';
 import '../../authentication/application/auth_controller.dart';
@@ -124,12 +125,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         SettingsTile(
                           icon: Icons.security,
                           title: 'Privacy Policy',
-                          onTap: () {},
+                          onTap: () => openExternalLink(
+                              context, AppConfig.privacyPolicyUrl),
                         ),
                         SettingsTile(
                           icon: Icons.description_outlined,
                           title: 'Terms of Use',
-                          onTap: () {},
+                          onTap: () =>
+                              openExternalLink(context, AppConfig.termsUrl),
                         ),
                       ],
                     ),
