@@ -36,7 +36,7 @@ REF="${1:-$GIT_BRANCH}"
 PRIVACY_SERVER_NAME="${PRIVACY_SERVER_NAME:-privacy.hudaayah.xyz}"
 APP_SERVER_NAME="${APP_SERVER_NAME:-app.hudaayah.xyz}"
 
-export SERVER_NAME PRIVACY_SERVER_NAME APP_SERVER_NAME APP_ENV_FILE   # consumed by the compose file
+export SERVER_NAME PRIVACY_SERVER_NAME APP_SERVER_NAME APP_ENV_FILE LETSENCRYPT_EMAIL   # consumed by the compose file
 
 # --- 1) Sync source -------------------------------------------------------------
 if [ ! -d "$APP_DIR/.git" ]; then
@@ -89,10 +89,20 @@ fi
 # Legal pages ($PRIVACY_SERVER_NAME) and landing page ($APP_SERVER_NAME). Each needs a
 # DNS A record pointing to this instance. If one does not resolve yet, its issuance
 # fails, nginx keeps the temporary self-signed cert for it, and the deploy continues.
+# Retries a few times so a DNS record that is still propagating does not leave the host
+# on nginx's temporary self-signed cert. If all attempts fail, the certbot service
+# (infra/certbot/renew-loop.sh) keeps trying every 12h and nginx reloads hourly.
 for EXTRA_NAME in "$PRIVACY_SERVER_NAME" "$APP_SERVER_NAME"; do
-  if ! compose run --rm --entrypoint sh certbot -c \
+  if compose run --rm --entrypoint sh certbot -c \
         "test -f /etc/letsencrypt/renewal/$EXTRA_NAME.conf && openssl x509 -checkend 86400 -noout -in /etc/letsencrypt/live/$EXTRA_NAME/cert.pem" 2>/dev/null; then
-    echo "Requesting/renewing Let's Encrypt certificate for $EXTRA_NAME..."
+    echo "Certificate for $EXTRA_NAME is valid."
+    continue
+  fi
+  issued=0
+  for attempt in 1 2 3; do
+    echo "Requesting Let's Encrypt certificate for $EXTRA_NAME (attempt $attempt/3)..."
+    # Remove nginx's self-signed placeholder so certbot writes to live/$EXTRA_NAME
+    # (not live/$EXTRA_NAME-0001, which nginx would never read).
     compose run --rm --entrypoint sh certbot -c \
       "rm -rf /etc/letsencrypt/live/$EXTRA_NAME /etc/letsencrypt/archive/$EXTRA_NAME /etc/letsencrypt/renewal/$EXTRA_NAME.conf" || true
     if compose run --rm --entrypoint certbot certbot certonly \
@@ -101,12 +111,21 @@ for EXTRA_NAME in "$PRIVACY_SERVER_NAME" "$APP_SERVER_NAME"; do
         --email "$LETSENCRYPT_EMAIL" \
         --agree-tos --no-eff-email --non-interactive \
         --keep-until-expiring; then
-      compose exec -T nginx nginx -s reload || true
-    else
-      echo "WARNING: certificate for $EXTRA_NAME failed (is its DNS record set?); continuing."
+      issued=1
+      break
     fi
+    [ "$attempt" -lt 3 ] && sleep 30
+  done
+  if [ "$issued" -eq 1 ]; then
+    echo "Certificate for $EXTRA_NAME issued."
+  else
+    echo "WARNING: certificate for $EXTRA_NAME failed after 3 attempts (check its DNS A record); continuing."
+    # Put a placeholder back so nginx can still start/reload with this server block.
+    compose exec -T nginx sh -c \
+      "mkdir -p /etc/letsencrypt/live/$EXTRA_NAME && [ -f /etc/letsencrypt/live/$EXTRA_NAME/fullchain.pem ] || openssl req -x509 -nodes -newkey rsa:2048 -days 1 -keyout /etc/letsencrypt/live/$EXTRA_NAME/privkey.pem -out /etc/letsencrypt/live/$EXTRA_NAME/fullchain.pem -subj /CN=$EXTRA_NAME >/dev/null 2>&1" || true
   fi
 done
+compose exec -T nginx nginx -s reload || true
 
 # --- 5) Migrations --------------------------------------------------------------
 # Static files are collected into the shared staticfiles volume by web's entrypoint.

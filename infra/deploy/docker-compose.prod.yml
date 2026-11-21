@@ -78,13 +78,19 @@ services:
 
   # Periodic renewal. deploy.sh handles first issuance explicitly; this loop checks
   # twice daily and is a no-op until a cert is due for renewal.
+  # It also issues certs for the extra web hosts if they are still missing (see
+  # infra/certbot/renew-loop.sh), so a DNS record added after a deploy self-heals.
   certbot:
     image: certbot/certbot:latest
     restart: unless-stopped
+    environment:
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:-}
+      EXTRA_SERVER_NAMES: "${PRIVACY_SERVER_NAME:-privacy.hudaayah.xyz} ${APP_SERVER_NAME:-app.hudaayah.xyz}"
     volumes:
       - letsencrypt:/etc/letsencrypt
       - certbot_www:/var/www/certbot
-    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h; done'
+      - ../certbot/renew-loop.sh:/renew-loop.sh:ro
+    entrypoint: ["/bin/sh", "/renew-loop.sh"]
 
 volumes:
   pgdata:

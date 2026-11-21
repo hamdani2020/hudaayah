@@ -6,7 +6,7 @@
 #    a temporary self-signed cert so nginx can start and answer the ACME HTTP-01 challenge
 #    on port 80. The certbot container then issues the real cert into the shared volume
 #    and this container is reloaded, picking up the real cert.
-# 3) Reload nginx every 6h so renewed certs are picked up without a restart.
+# 3) Reload nginx every hour so renewed/new certs are picked up without a restart.
 set -eu
 
 SERVER_NAME="${SERVER_NAME:?SERVER_NAME must be set}"
@@ -32,10 +32,10 @@ for NAME in "${SERVER_NAME}" "${PRIVACY_SERVER_NAME}" "${APP_SERVER_NAME}"; do
     fi
 done
 
-# 3) Periodic reload loop (background) to pick up renewed certs.
+# 3) Periodic reload loop (background) to pick up renewed or newly issued certs.
 (
     while true; do
-        sleep 21600
+        sleep 3600
         nginx -s reload 2>/dev/null || true
     done
 ) &

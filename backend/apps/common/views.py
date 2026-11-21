@@ -28,6 +28,13 @@ class LandingPageView(TemplateView):
             privacy_url=f"{legal}/privacy/",
             terms_url=f"{legal}/terms/",
             delete_account_url=f"{legal}/delete-account/",
+            tester_form_action=(
+                f"https://docs.google.com/forms/d/e/{settings.TESTER_FORM_ID}/formResponse"
+                if settings.TESTER_FORM_ID
+                else ""
+            ),
+            tester_form_name_field=settings.TESTER_FORM_NAME_FIELD,
+            tester_form_email_field=settings.TESTER_FORM_EMAIL_FIELD,
         )
         return context
 
@@ -35,7 +42,7 @@ class LandingPageView(TemplateView):
 class LegalPageView(TemplateView):
     """Public, static legal pages (privacy, terms, account deletion). No auth, no DB."""
 
-    last_updated = "November 20, 2026"
+    last_updated = "November 21, 2026"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
