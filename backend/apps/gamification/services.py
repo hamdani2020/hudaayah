@@ -66,9 +66,34 @@ def daily_goal_status(user, *, today=None) -> dict:
     }
 
 
+def week_activity(user, *, today=None) -> list[dict]:
+    """The current calendar week (Monday to Sunday), one entry per day.
+
+    `active` is true when the user earned XP that day. Days after today are
+    reported as inactive. Dates use the server's local date (TIME_ZONE).
+    """
+    today = today or timezone.localdate()
+    monday = today - timedelta(days=today.weekday())
+    sunday = monday + timedelta(days=6)
+    active_days = set(
+        DailyActivity.objects.filter(
+            user=user, date__range=(monday, sunday), xp_earned__gt=0
+        ).values_list("date", flat=True)
+    )
+    return [
+        {
+            "date": (monday + timedelta(days=i)).isoformat(),
+            "active": (monday + timedelta(days=i)) in active_days,
+            "is_today": (monday + timedelta(days=i)) == today,
+        }
+        for i in range(7)
+    ]
+
+
 def gamification_summary(user) -> dict:
     return {
         "total_xp": total_xp(user),
         "streak": current_streak(user),
         "daily_goal": daily_goal_status(user),
+        "week": week_activity(user),
     }

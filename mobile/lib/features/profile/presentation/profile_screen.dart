@@ -9,6 +9,7 @@ import '../../../core/widgets/stat_card.dart';
 import '../../authentication/application/auth_controller.dart';
 import '../../progress/data/progress_models.dart';
 import '../../progress/data/progress_repository.dart';
+import '../application/reminder_controller.dart';
 import 'widgets/history_tile.dart';
 import 'widgets/settings_tile.dart';
 
@@ -17,8 +18,8 @@ import 'widgets/settings_tile.dart';
 /// settings list, logout and account deletion, and QF attribution. All stats
 /// are driven by real backend data — no fabricated counts or per-day figures.
 ///
-/// Local-only toggles (Reminders / Night-mode) hold widget state only; they do
-/// not persist or call any API (design-mapping §8.4).
+/// Daily Reminders schedule a local notification on the device (stored in
+/// shared preferences, no API). Weekly Discipline comes from the server summary.
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -27,14 +28,51 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  bool _reminders = true;
-  bool _nightMode = false;
+  Future<void> _setReminderEnabled(bool enabled) async {
+    final result =
+        await ref.read(reminderControllerProvider.notifier).setEnabled(enabled);
+    if (!mounted) return;
+    _showReminderResult(result,
+        okMessage: enabled ? 'Daily reminder is on.' : 'Daily reminder is off.');
+  }
+
+  Future<void> _pickReminderTime(ReminderSettings current) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: current.time,
+      helpText: 'Daily reminder time',
+    );
+    if (picked == null || !mounted) return;
+    final controller = ref.read(reminderControllerProvider.notifier);
+    var result = await controller.setTime(picked);
+    // Choosing a time is a clear sign the learner wants the reminder.
+    if (result == ReminderChangeResult.ok && !current.enabled) {
+      result = await controller.setEnabled(true);
+    }
+    if (!mounted) return;
+    _showReminderResult(result,
+        okMessage: 'Daily reminder set for ${picked.format(context)}.');
+  }
+
+  void _showReminderResult(ReminderChangeResult result, {required String okMessage}) {
+    final message = switch (result) {
+      ReminderChangeResult.ok => okMessage,
+      ReminderChangeResult.permissionDenied =>
+        'Notifications are off for Hudaayah. You can allow them in your phone settings.',
+      ReminderChangeResult.failed =>
+        'We could not set the reminder. Please try again.',
+    };
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final user = ref.watch(authControllerProvider).valueOrNull?.user;
     final summary = ref.watch(progressSummaryProvider).valueOrNull;
+    final reminder = ref.watch(reminderControllerProvider).valueOrNull;
 
     final streak = summary?.streak ?? 0;
     final xp = summary?.totalXp ?? 0;
@@ -59,7 +97,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     xp: xp,
                   ),
                   const SizedBox(height: 20),
-                  _WeeklyRhythm(streak: streak),
+                  _WeeklyRhythm(week: summary?.week ?? const []),
                   const SizedBox(height: 20),
                   Text('Recent Reflections', style: theme.textTheme.titleLarge),
                   const SizedBox(height: 12),
@@ -107,19 +145,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         SettingsTile(
                           icon: Icons.notifications,
                           title: 'Daily Reminders',
+                          subtitle: reminder == null
+                              ? null
+                              : reminder.enabled
+                                  ? 'Every day at ${reminder.time.format(context)}'
+                                  : 'Off · tap to set a time',
+                          onTap: reminder == null
+                              ? null
+                              : () => _pickReminderTime(reminder),
                           trailing: Switch(
-                            value: _reminders,
-                            onChanged: (v) =>
-                                setState(() => _reminders = v),
-                          ),
-                        ),
-                        SettingsTile(
-                          icon: Icons.dark_mode,
-                          title: 'Night Mode',
-                          trailing: Switch(
-                            value: _nightMode,
-                            onChanged: (v) =>
-                                setState(() => _nightMode = v),
+                            value: reminder?.enabled ?? false,
+                            onChanged: reminder == null
+                                ? null
+                                : (v) => _setReminderEnabled(v),
                           ),
                         ),
                         SettingsTile(
@@ -146,11 +184,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Column(
                       children: [
-                        SettingsTile(
-                          icon: Icons.manage_accounts,
-                          title: 'Manage Account',
-                          onTap: () {},
-                        ),
                         SettingsTile(
                           icon: Icons.logout,
                           title: 'Sign Out',
@@ -404,21 +437,19 @@ class _ProfileCard extends StatelessWidget {
   }
 }
 
-/// Simplified 7-slot weekly rhythm derived from the streak (fills the last
-/// `min(streak, 7)` days). Honest: no fabricated per-day minutes
-/// (design-mapping §2 screen 08 / §8.4).
+/// The current calendar week (Mon–Sun) from the server: a day is filled when
+/// the learner completed a lesson that day, and today is outlined. Honest: no
+/// fabricated per-day minutes (design-mapping §2 screen 08 / §8.4).
 class _WeeklyRhythm extends StatelessWidget {
-  const _WeeklyRhythm({required this.streak});
+  const _WeeklyRhythm({required this.week});
 
-  final int streak;
+  final List<WeekDay> week;
 
   static const _days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final filled = streak.clamp(0, 7);
-    // Fill the most recent `filled` slots (right-aligned in the week).
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -436,7 +467,11 @@ class _WeeklyRhythm extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               for (var i = 0; i < 7; i++)
-                _DaySlot(label: _days[i], active: i >= 7 - filled),
+                _DaySlot(
+                  label: _days[i],
+                  active: i < week.length && week[i].active,
+                  isToday: i < week.length && week[i].isToday,
+                ),
             ],
           ),
         ],
@@ -446,10 +481,15 @@ class _WeeklyRhythm extends StatelessWidget {
 }
 
 class _DaySlot extends StatelessWidget {
-  const _DaySlot({required this.label, required this.active});
+  const _DaySlot({
+    required this.label,
+    required this.active,
+    required this.isToday,
+  });
 
   final String label;
   final bool active;
+  final bool isToday;
 
   @override
   Widget build(BuildContext context) {
@@ -457,8 +497,10 @@ class _DaySlot extends StatelessWidget {
     return Column(
       children: [
         Text(label,
-            style: theme.textTheme.labelSmall
-                ?.copyWith(color: AppTheme.onSurfaceVariant)),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: isToday ? AppTheme.primary : AppTheme.onSurfaceVariant,
+              fontWeight: isToday ? FontWeight.w700 : null,
+            )),
         const SizedBox(height: 6),
         Container(
           width: 36,
@@ -469,6 +511,9 @@ class _DaySlot extends StatelessWidget {
             color: active
                 ? AppTheme.primaryContainer
                 : AppTheme.surfaceContainerHigh,
+            border: isToday
+                ? Border.all(color: AppTheme.secondaryContainer, width: 2)
+                : null,
           ),
           child: Icon(
             Icons.star,

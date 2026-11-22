@@ -105,3 +105,34 @@ def test_streak_alive_if_yesterday_but_not_today():
         user=user, date=today - timedelta(days=1), xp_earned=10, lessons_completed=1
     )
     assert current_streak(user, today=today) == 1
+
+
+def test_week_activity_is_current_calendar_week():
+    from datetime import date
+
+    from apps.gamification.services import week_activity
+
+    _, user = _client()
+    wednesday = date(2026, 11, 18)  # a Wednesday
+    # Active Monday and Wednesday of this week; last Sunday belongs to the previous week.
+    for d in (date(2026, 11, 16), wednesday, date(2026, 11, 15)):
+        DailyActivity.objects.create(user=user, date=d, xp_earned=10, lessons_completed=1)
+    week = week_activity(user, today=wednesday)
+    assert [d["date"] for d in week] == [
+        "2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19",
+        "2026-11-20", "2026-11-21", "2026-11-22",
+    ]
+    assert [d["active"] for d in week] == [True, False, True, False, False, False, False]
+    assert [d["is_today"] for d in week] == [False, False, True, False, False, False, False]
+
+
+def test_week_activity_is_user_scoped_and_in_summary():
+    lesson, ex = _lesson()
+    a, _ = _client(sub="wa")
+    _complete(a, lesson, ex, "kw")
+    b, _ = _client(sub="wb")
+    week_b = b.get("/api/v1/progress/").json()["week"]
+    assert len(week_b) == 7
+    assert not any(d["active"] for d in week_b)
+    week_a = a.get("/api/v1/progress/").json()["week"]
+    assert any(d["active"] and d["is_today"] for d in week_a)

@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme.dart';
 import '../../../core/errors/api_exception.dart';
 import '../application/audio_controller.dart';
-import '../data/lesson_models.dart';
 import '../data/lesson_repository.dart';
 import 'ayah_card.dart';
 import 'widgets/audio_strip.dart';
@@ -76,13 +75,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           );
         },
         data: (lesson) {
-          final firstAudioAyah = _firstAudioAyah(lesson);
-          final isStripAyahPlaying = firstAudioAyah != null &&
-              audio.verseKey == firstAudioAyah.verseKey &&
-              audio.playing;
-          final isStripAyahLoading = firstAudioAyah != null &&
-              audio.verseKey == firstAudioAyah.verseKey &&
-              audio.loading;
+          // The big play button recites every ayah on this screen in order.
+          final queue = [
+            for (final a in lesson.ayahs)
+              if (a.audioUrl != null)
+                AyahAudio(verseKey: a.verseKey, url: a.audioUrl!),
+          ];
+          final isPlayingAll = audio.isPlayingAll && audio.playing;
+          final isLoadingAll = audio.isPlayingAll && audio.loading;
 
           // Heading comes from the lesson's own backend metadata (so each surah
           // shows correctly). Prefer the Arabic surah name; fall back to title.
@@ -97,15 +97,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   AudioStrip(
                     surahTitle: surahTitle,
                     reciterLabel: reciterLabel,
-                    playing: isStripAyahPlaying,
-                    loading: isStripAyahLoading,
+                    playing: isPlayingAll,
+                    loading: isLoadingAll,
                     looping: audio.looping,
-                    onPlayPause: firstAudioAyah == null
+                    onPlayPause: queue.isEmpty
                         ? null
                         : () => ref
                             .read(audioControllerProvider.notifier)
-                            .playAyah(
-                                firstAudioAyah.verseKey, firstAudioAyah.audioUrl!),
+                            .playAll(queue),
                     onToggleLoop: () =>
                         ref.read(audioControllerProvider.notifier).toggleLoop(),
                   ),
@@ -164,13 +163,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     );
   }
 
-  /// First ayah that actually has an audio URL, for the strip's main button.
-  Ayah? _firstAudioAyah(Lesson lesson) {
-    for (final a in lesson.ayahs) {
-      if (a.audioUrl != null) return a;
-    }
-    return null;
-  }
 }
 
 class _ErrorRetry extends StatelessWidget {

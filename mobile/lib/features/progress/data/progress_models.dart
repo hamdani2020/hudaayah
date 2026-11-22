@@ -69,17 +69,36 @@ class DailyGoal {
   double get fraction => goalXp == 0 ? 0 : (earnedXp / goalXp).clamp(0, 1).toDouble();
 }
 
+/// One day of the current calendar week (Mon–Sun), from the server.
+class WeekDay {
+  final DateTime date;
+  final bool active;
+  final bool isToday;
+
+  const WeekDay({required this.date, required this.active, required this.isToday});
+
+  factory WeekDay.fromJson(Map<String, dynamic> j) => WeekDay(
+        date: DateTime.tryParse(j['date'] as String? ?? '') ?? DateTime(1970),
+        active: j['active'] as bool? ?? false,
+        isToday: j['is_today'] as bool? ?? false,
+      );
+}
+
 class ProgressSummary {
   final int totalXp;
   final int streak;
   final DailyGoal dailyGoal;
   final List<LessonProgress> lessons;
 
+  /// Current calendar week, Monday first. Empty if the server did not send it.
+  final List<WeekDay> week;
+
   const ProgressSummary({
     required this.totalXp,
     required this.streak,
     required this.dailyGoal,
     required this.lessons,
+    this.week = const [],
   });
 
   factory ProgressSummary.fromJson(Map<String, dynamic> j) => ProgressSummary(
@@ -89,6 +108,9 @@ class ProgressSummary {
             DailyGoal.fromJson((j['daily_goal'] as Map?)?.cast<String, dynamic>() ?? {}),
         lessons: ((j['lessons'] as List?) ?? [])
             .map((l) => LessonProgress.fromJson((l as Map).cast<String, dynamic>()))
+            .toList(),
+        week: ((j['week'] as List?) ?? [])
+            .map((d) => WeekDay.fromJson((d as Map).cast<String, dynamic>()))
             .toList(),
       );
 }
