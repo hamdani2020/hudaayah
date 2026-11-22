@@ -32,13 +32,24 @@ class AyahCard extends ConsumerWidget {
     final audio = ref.watch(audioControllerProvider);
     final isThis = audio.verseKey == ayah.verseKey;
     final hasAudio = ayah.audioUrl != null;
-    final isLoadingThis = isThis && audio.loading;
-    final isPlayingThis = isThis && audio.playing;
+    // The small button reflects single-ayah playback only. During play-all the
+    // ayah being recited is highlighted instead, and tapping its button plays
+    // just that ayah.
+    final isSingle = audio.mode == AudioMode.single;
+    final isLoadingThis = isThis && isSingle && audio.loading;
+    final isPlayingThis = isThis && isSingle && audio.playing;
+    // Stays outlined while paused, so the learner can see where play-all stopped.
+    final isRecitedInPlayAll = isThis && audio.isPlayingAll;
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
         color: AppTheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+        border: Border.all(
+          color: isRecitedInPlayAll ? AppTheme.secondaryContainer : Colors.transparent,
+          width: 2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
