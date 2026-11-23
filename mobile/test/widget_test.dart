@@ -17,6 +17,11 @@ class _FakeSecureStorage implements SecureStorage {
   }
 
   @override
+  Future<String?> readProfileJson() async => _m['profile'];
+  @override
+  Future<void> saveProfileJson(String json) async => _m['profile'] = json;
+
+  @override
   Future<void> clear() async => _m.clear();
 }
 

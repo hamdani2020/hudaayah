@@ -1,0 +1,253 @@
+# Hudaayah Android release automation.
+# Spec: .kiro/specs/mobile-fastlane-deploy/   Usage: docs/mobile-release.md
+#
+#   fastlane internal              build + upload to Internal testing
+#   fastlane closed [draft:true]   build + upload to the closed test track
+#   fastlane promote               closed-test release -> production (asks first)
+#   fastlane listing [validate:true]  upload the store listing from git
+#   fastlane check                 preflight + next build number, no build/upload
+#
+# Run from mobile/android. All paths below are absolute, so the lanes behave the same
+# from any working directory.
+
+require "fileutils"
+require "json"
+require "shellwords"
+
+# fastlane writes a README.md into this folder on every run unless told not to.
+ENV["FASTLANE_SKIP_DOCS"] = "1"
+
+default_platform(:android)
+
+FASTLANE_DIR = File.expand_path(File.dirname(__FILE__))
+ANDROID_DIR = File.expand_path("..", FASTLANE_DIR)
+MOBILE_DIR = File.expand_path("..", ANDROID_DIR)
+
+METADATA_PATH = File.join(FASTLANE_DIR, "metadata", "android")
+LOCALE_DIR = File.join(METADATA_PATH, "en-US")
+CHANGELOG_DIR = File.join(LOCALE_DIR, "changelogs")
+AAB_PATH = File.join(MOBILE_DIR, "build", "app", "outputs", "bundle", "release", "app-release.aab")
+PUBSPEC_PATH = File.join(MOBILE_DIR, "pubspec.yaml")
+KEY_PROPERTIES_PATH = File.join(ANDROID_DIR, "key.properties")
+
+CLOSED_TRACK = ENV.fetch("PLAY_CLOSED_TRACK", "alpha")
+# Public fingerprint of the upload key (not a secret).
+UPLOAD_KEY_SHA1 = ENV.fetch("UPLOAD_KEY_SHA1", "99:C7:D1:23:E0:2A:5D:1C:32:3D:DA:E7:16:04:76:26:D7:E0:D3:BC")
+DART_DEFINES_FILE = ENV.fetch("DART_DEFINES_FILE", "dart_defines/prod.json")
+
+# Play limits.
+MAX_CHANGELOG = 500
+MAX_TITLE = 30
+MAX_SHORT_DESCRIPTION = 80
+MAX_FULL_DESCRIPTION = 4000
+
+# Accepts true/"true"/"1"/"yes" from the command line (`draft:true`).
+def truthy?(value)
+  %w[true 1 yes y].include?(value.to_s.strip.downcase)
+end
+
+def normalize_sha1(value)
+  value.to_s.delete(":").strip.upcase
+end
+
+platform :android do
+  desc "Build and upload to Internal testing"
+  lane :internal do |options|
+    release_to(track: "internal", draft: truthy?(options[:draft]))
+  end
+
+  desc "Build and upload to the closed test track (PLAY_CLOSED_TRACK, default 'alpha')"
+  lane :closed do |options|
+    release_to(track: CLOSED_TRACK, draft: truthy?(options[:draft]))
+  end
+
+  desc "Promote the latest closed-test release to production (asks for confirmation)"
+  lane :promote do
+    codes = track_codes(CLOSED_TRACK)
+    UI.user_error!("No release found on the '#{CLOSED_TRACK}' track to promote.") if codes.empty?
+    version_code = codes.max
+    version_name = pubspec_version_name
+
+    question = "Promote build #{version_code} from '#{CLOSED_TRACK}' to production?"
+    if ENV["CI"]
+      # In CI the protected `play-production` GitHub environment is the confirmation.
+      unless ENV["FL_PROMOTE_CONFIRMED"] == "1"
+        UI.user_error!("Refusing to promote in CI without FL_PROMOTE_CONFIRMED=1.")
+      end
+    elsif !UI.confirm(question)
+      UI.user_error!("Promotion cancelled.")
+    end
+
+    upload_to_play_store(
+      track: CLOSED_TRACK,
+      track_promote_to: "production",
+      track_promote_release_status: "completed",
+      version_code: version_code,
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+    UI.success("Promoted build #{version_code} (pubspec version #{version_name}) to production.")
+  end
+
+  desc "Upload the store listing from git (validate:true only checks it with Play)"
+  lane :listing do |options|
+    validate = truthy?(options[:validate])
+    check_listing!
+
+    upload_to_play_store(
+      metadata_path: METADATA_PATH,
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_changelogs: true,
+      skip_upload_metadata: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+      validate_only: validate
+    )
+    UI.success(validate ? "Store listing is valid (nothing was published)." : "Store listing uploaded.")
+  end
+
+  desc "Preflight checks and the next build number, without building or uploading"
+  lane :check do
+    preflight!
+    UI.success("Version #{pubspec_version_name}, next build number #{next_build_number}.")
+  end
+
+  # ----------------------------------------------------------------------------------
+  # Helpers
+  # ----------------------------------------------------------------------------------
+
+  private_lane :release_to do |options|
+    track = options[:track]
+    draft = options[:draft]
+
+    preflight!
+    version_name = pubspec_version_name
+    build_number = next_build_number
+    UI.message("Releasing #{version_name} (#{build_number}) to '#{track}'#{draft ? ' as draft' : ''}")
+
+    temp_changelog = prepare_changelog!(build_number)
+    begin
+      sh(
+        "cd #{MOBILE_DIR.shellescape} && flutter build appbundle --release " \
+        "--dart-define-from-file=#{DART_DEFINES_FILE.shellescape} " \
+        "--build-name=#{version_name.shellescape} --build-number=#{build_number}"
+      )
+      verify_signature!
+
+      upload_to_play_store(
+        track: track,
+        aab: AAB_PATH,
+        release_status: draft ? "draft" : "completed",
+        metadata_path: METADATA_PATH,
+        skip_upload_apk: true,
+        skip_upload_metadata: true,
+        skip_upload_images: true,
+        skip_upload_screenshots: true,
+        skip_upload_changelogs: false
+      )
+    ensure
+      File.delete(temp_changelog) if temp_changelog && File.exist?(temp_changelog)
+    end
+
+    UI.success("Released #{version_name} (#{build_number}) to '#{track}'#{draft ? ' as draft' : ''}.")
+  end
+
+end
+
+# Plain Ruby helpers. They run in the Fastfile's context, so they can call actions.
+
+# Version codes on one track; [] if the track has no releases or does not exist.
+def track_codes(track)
+  google_play_track_version_codes(track: track)
+rescue StandardError => e
+  UI.important("Could not read track '#{track}': #{e.message.lines.first&.strip}")
+  []
+end
+
+# Highest version code on any track + 1, so a build number is never reused.
+def next_build_number
+  tracks = ["internal", CLOSED_TRACK, "beta", "production"].uniq
+  codes = tracks.flat_map { |t| Array(track_codes(t)) }.map(&:to_i)
+  (codes.max || 0) + 1
+end
+
+def pubspec_version_name
+  line = File.readlines(PUBSPEC_PATH).find { |l| l.start_with?("version:") }
+  match = line && line.match(/^version:\s*(\d+\.\d+\.\d+)/)
+  UI.user_error!("Could not read 'version: X.Y.Z' from #{PUBSPEC_PATH}") unless match
+  match[1]
+end
+
+def preflight!
+  defines_path = File.join(MOBILE_DIR, DART_DEFINES_FILE)
+  UI.user_error!("Missing #{DART_DEFINES_FILE} (see mobile/dart_defines).") unless File.exist?(defines_path)
+  begin
+    defines = JSON.parse(File.read(defines_path))
+  rescue JSON::ParserError
+    UI.user_error!("#{DART_DEFINES_FILE} is not valid JSON.")
+  end
+  api = defines["API_BASE_URL"].to_s
+  UI.user_error!("API_BASE_URL in #{DART_DEFINES_FILE} must start with https://") unless api.start_with?("https://")
+
+  UI.user_error!("Missing android/key.properties (upload key settings).") unless File.exist?(KEY_PROPERTIES_PATH)
+  props = File.readlines(KEY_PROPERTIES_PATH).map(&:strip).reject { |l| l.empty? || l.start_with?("#") }
+                .to_h { |l| l.split("=", 2).map(&:strip) }
+  missing = %w[storePassword keyPassword keyAlias storeFile].select { |k| props[k].to_s.empty? }
+  UI.user_error!("android/key.properties is missing: #{missing.join(', ')}") unless missing.empty?
+  store_file = File.expand_path(props["storeFile"], ANDROID_DIR)
+  UI.user_error!("Keystore not found at storeFile path.") unless File.exist?(store_file)
+
+  pubspec_version_name
+end
+
+# Uses changelogs/<N>.txt, or a temporary copy of default.txt. Returns the temp file
+# path to delete afterwards (nil if a real changelog for N exists).
+def prepare_changelog!(build_number)
+  target = File.join(CHANGELOG_DIR, "#{build_number}.txt")
+  temp = nil
+  unless File.exist?(target)
+    default = File.join(CHANGELOG_DIR, "default.txt")
+    UI.user_error!("Missing release notes: add changelogs/#{build_number}.txt or default.txt") unless File.exist?(default)
+    FileUtils.cp(default, target)
+    temp = target
+  end
+  length = File.read(target).strip.length
+  if length > MAX_CHANGELOG
+    File.delete(temp) if temp
+    UI.user_error!("Release notes for #{build_number} are #{length} characters (max #{MAX_CHANGELOG}).")
+  end
+  UI.message("Release notes: #{File.basename(temp ? File.join(CHANGELOG_DIR, 'default.txt') : target)}")
+  temp
+end
+
+def verify_signature!
+  UI.user_error!("Bundle not found at #{AAB_PATH}") unless File.exist?(AAB_PATH)
+  output = `keytool -printcert -jarfile #{AAB_PATH.shellescape} 2>&1`
+  found = output[/SHA1:\s*([0-9A-F:]+)/i, 1]
+  UI.user_error!("Could not read the bundle's signing certificate.") unless found
+  unless normalize_sha1(found) == normalize_sha1(UPLOAD_KEY_SHA1)
+    UI.user_error!("Bundle is signed with #{found}, expected the upload key #{UPLOAD_KEY_SHA1}. Not uploading.")
+  end
+  UI.success("Bundle is signed with the upload key.")
+end
+
+def check_listing!
+  required = {
+    "title.txt" => MAX_TITLE,
+    "short_description.txt" => MAX_SHORT_DESCRIPTION,
+    "full_description.txt" => MAX_FULL_DESCRIPTION
+  }
+  required.each do |file, max|
+    path = File.join(LOCALE_DIR, file)
+    unless File.exist?(path) && !File.read(path).strip.empty?
+      UI.user_error!("#{file} is missing or empty. Run 'fastlane supply init' after the listing is final in Play Console.")
+    end
+    length = File.read(path).strip.length
+    UI.user_error!("#{file} is #{length} characters (max #{max}).") if length > max
+  end
+end

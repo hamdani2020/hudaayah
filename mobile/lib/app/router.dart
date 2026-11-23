@@ -14,6 +14,7 @@ import '../features/quran_reader/presentation/reader_screen.dart';
 import '../features/quran_reader/presentation/surah_selection_screen.dart';
 import '../features/review/presentation/review_session_screen.dart';
 import 'home_shell.dart';
+import 'splash_screen.dart';
 
 /// Bridges a Riverpod provider to a [Listenable] so GoRouter re-evaluates its
 /// redirect whenever auth state changes.
@@ -51,22 +52,32 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
-    initialLocation: '/onboarding',
+    // Start on the splash screen; the redirect below moves on once the saved
+    // session has been checked.
+    initialLocation: '/splash',
     refreshListenable: refresh,
     redirect: (context, state) {
       final auth = ref.read(authControllerProvider);
-      // While restoring the session, don't bounce the user around.
+      // While restoring the session (splash) or signing in (/auth), stay put.
       if (auth.isLoading) return null;
 
       final signedIn = auth.valueOrNull?.isSignedIn ?? false;
       final loc = state.matchedLocation;
-      final onAuthFlow = loc == '/auth' || loc == '/onboarding';
 
+      if (loc == '/splash') return signedIn ? '/home' : '/onboarding';
+
+      final onAuthFlow = loc == '/auth' || loc == '/onboarding';
       if (!signedIn && !onAuthFlow) return '/auth';
-      if (signedIn && loc == '/auth') return '/home';
+      // Signed-in learners never see onboarding or sign-in again.
+      if (signedIn && onAuthFlow) return '/home';
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/splash',
+        name: 'splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(
         path: '/onboarding',
         name: 'onboarding',

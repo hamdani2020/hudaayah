@@ -54,9 +54,13 @@ lanes never upload the listing.
 - The Play service account has the least permissions needed: release to testing tracks
   for `internal`/`closed`; production release only if `promote` is used.
 
-## R7 CI release on tag
-- Pushing a tag `v<version name>` (e.g. `v1.0.2`) runs `fastlane closed` in GitHub
-  Actions. The tag must match the `pubspec.yaml` version name, or the job fails.
+## R7 CI release on merge to main
+- `develop` is the working branch; `main` is only updated to deploy.
+- Every push/merge to `main` that changes `mobile/**` (or the workflow) runs
+  `fastlane closed` in GitHub Actions, so testers get each deployment.
+- Listing-only changes (`fastlane/metadata/*/*.txt`, `images/`) and `.md` files do not
+  trigger a build; the listing is published with the manual `listing` lane.
+- No tag trigger (it would release the same commit twice).
 - `workflow_dispatch` allows running `internal`, `closed` or `promote` manually.
 - `promote` runs only in a GitHub environment that requires the owner's approval.
 - Flutter and Java versions in CI match the local toolchain (Flutter 3.41.x, Java 17).
@@ -80,7 +84,7 @@ lanes never upload the listing.
 - **Validate first:** `fastlane listing validate:true` checks the listing with Play
   without publishing it.
 - **CI:** `listing` is available from manual dispatch only, in the `play-testing`
-  environment. It never runs on tags.
+  environment. It never runs automatically on merge to main.
 - Committed listing files contain no personal data (screenshots without personal emails
   or copyrighted avatars).
 

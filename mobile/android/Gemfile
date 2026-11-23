@@ -1,0 +1,5 @@
+source "https://rubygems.org"
+
+# Same version as the owner's Homebrew install (`fastlane --version`).
+# Locally you can run `fastlane <lane>` (Homebrew) or `bundle exec fastlane <lane>`.
+gem "fastlane", "2.242.0"

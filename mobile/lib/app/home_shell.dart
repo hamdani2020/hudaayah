@@ -19,9 +19,11 @@ class HomeShell extends StatelessWidget {
       selectedIcon: Icon(Icons.explore),
       label: 'Home',
     ),
+    // menu_book_outlined looks almost identical to the filled icon, so Read
+    // always looked selected. auto_stories has a clear outline vs filled pair.
     NavigationDestination(
-      icon: Icon(Icons.menu_book_outlined),
-      selectedIcon: Icon(Icons.menu_book),
+      icon: Icon(Icons.auto_stories_outlined),
+      selectedIcon: Icon(Icons.auto_stories),
       label: 'Read',
     ),
     NavigationDestination(

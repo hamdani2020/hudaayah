@@ -1,0 +1,6 @@
+# Google Play service account key. Never commit it.
+#   Local default: ~/keys/hudaayah-play.json
+#   CI: PLAY_JSON_KEY_PATH points to a temp file written from GitHub Secrets.
+json_key_file(ENV["PLAY_JSON_KEY_PATH"] || File.expand_path("~/keys/hudaayah-play.json"))
+
+package_name("foundation.hudaayah.hudaayah")

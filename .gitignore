@@ -77,6 +77,15 @@ build/
 **/android/.gradle/
 **/android/local.properties
 **/android/key.properties
+# fastlane (mobile/android/fastlane): run output and any service-account keys.
+# The listing in fastlane/metadata/ IS committed.
+mobile/android/fastlane/report.xml
+mobile/android/fastlane/Preview.html
+mobile/android/fastlane/README.md
+mobile/android/fastlane/test_output/
+mobile/android/fastlane/*.json
+mobile/android/*.json
+mobile/android/.bundle/
 **/android/app/debug/
 **/android/app/profile/
 **/android/app/release/
