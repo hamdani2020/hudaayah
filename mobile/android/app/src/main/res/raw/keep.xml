@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Resources referenced only by name from Dart (not from Android code or XML), so R8
+  resource shrinking in release builds cannot see they are used and would delete them.
+  ic_stat_hudaayah is the daily-reminder notification icon
+  (lib/core/notifications/reminder_service.dart). Without it, release builds fail to
+  set up notifications.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_hudaayah" />
