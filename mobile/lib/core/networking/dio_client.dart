@@ -39,8 +39,17 @@ final dioProvider = Provider<Dio>((ref) {
         final alreadyRetried = e.requestOptions.extra['__retried'] == true;
 
         if (e.response?.statusCode == 401 && !isAuthEndpoint && !alreadyRetried) {
-          final refreshed = await _tryRefresh(dio, storage);
-          if (refreshed) {
+          final result = await _tryRefresh(dio, storage);
+          if (result == _RefreshResult.networkError) {
+            // Could not reach the server to refresh. The session may still be
+            // valid, so keep it and report a connection problem instead of 401.
+            return handler.next(DioException(
+              requestOptions: e.requestOptions,
+              type: DioExceptionType.connectionError,
+              error: e.error,
+            ));
+          }
+          if (result == _RefreshResult.refreshed) {
             final req = e.requestOptions;
             req.extra['__retried'] = true;
             final newToken = await storage.readAccessToken();
@@ -54,7 +63,7 @@ final dioProvider = Provider<Dio>((ref) {
               return handler.next(retryErr);
             }
           } else {
-            // Refresh failed — session is dead; clear local creds.
+            // The server rejected the refresh token: the session is dead.
             await storage.clear();
           }
         }
@@ -79,21 +88,42 @@ final dioProvider = Provider<Dio>((ref) {
   return dio;
 });
 
-/// Attempts to rotate tokens using the stored refresh token. Returns true on
-/// success (new tokens persisted). Uses a bare Dio to avoid interceptor recursion.
-Future<bool> _tryRefresh(Dio dio, SecureStorage storage) async {
+enum _RefreshResult {
+  /// New tokens saved.
+  refreshed,
+
+  /// The server answered and refused the refresh token (session is over).
+  rejected,
+
+  /// No usable answer (offline, timeout, 5xx). Keep the session.
+  networkError,
+}
+
+/// Attempts to rotate tokens using the stored refresh token. Uses a bare Dio to
+/// avoid interceptor recursion.
+Future<_RefreshResult> _tryRefresh(Dio dio, SecureStorage storage) async {
   final refresh = await storage.readRefreshToken();
-  if (refresh == null || refresh.isEmpty) return false;
+  if (refresh == null || refresh.isEmpty) return _RefreshResult.rejected;
   try {
-    final bare = Dio(BaseOptions(baseUrl: dio.options.baseUrl));
+    final bare = Dio(BaseOptions(
+      baseUrl: dio.options.baseUrl,
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 20),
+    ));
     final resp = await bare.post('/auth/refresh/', data: {'refresh_token': refresh});
     final body = (resp.data as Map).cast<String, dynamic>();
     await storage.saveTokens(
       access: body['access_token'] as String,
       refresh: body['refresh_token'] as String?,
     );
-    return true;
-  } on DioException {
-    return false;
+    return _RefreshResult.refreshed;
+  } on DioException catch (e) {
+    final status = e.response?.statusCode;
+    // 400/401/403 = the server refused this refresh token. Anything else
+    // (offline, timeout, 429, 5xx) is temporary.
+    if (status == 400 || status == 401 || status == 403) {
+      return _RefreshResult.rejected;
+    }
+    return _RefreshResult.networkError;
   }
 }

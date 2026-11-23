@@ -1,0 +1,4 @@
+• You now stay signed in: reopening the app takes you straight to Home.
+• Weak or no connection no longer signs you out.
+• The Read tab now shows clearly when it is selected.
+JazakAllahu khairan for testing Hudaayah!

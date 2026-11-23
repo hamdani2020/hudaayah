@@ -3,7 +3,7 @@
 ## Overview
 
 ```
-developer / GitHub tag
+developer / merge to main
         │
         ▼
 fastlane <lane>            (mobile/android/fastlane/Fastfile)
@@ -26,7 +26,7 @@ Google Play (internal / closed / production)
 | `mobile/android/fastlane/Fastfile` | Lanes `internal`, `closed`, `promote` and private helper lanes. |
 | `mobile/android/fastlane/metadata/android/en-US/changelogs/default.txt` | Fallback release notes. |
 | `mobile/android/fastlane/README.md` | Setup and usage. |
-| `.github/workflows/mobile-release.yml` | CI release on tag / manual dispatch. |
+| `.github/workflows/mobile-release.yml` | CI release on merge to main / manual dispatch. |
 | `.gitignore` additions | `mobile/android/fastlane/report.xml`, `README` auto-gen output, `*.json` key files, `fastlane/play-key.json`. |
 
 ## Configuration (environment variables)
@@ -89,7 +89,7 @@ folder must always hold the full set.
 
 ## CI workflow (`mobile-release.yml`)
 
-Triggers: `push` tags `v*`; `workflow_dispatch` with input `lane`
+Triggers: `push` to `main` with paths `mobile/**` (minus listing files and `.md`); `workflow_dispatch` with input `lane`
 (`internal|closed|promote|listing`), `draft` (bool, release lanes) and `validate`
 (bool, `listing`). `listing` skips the Flutter build steps and the keystore secrets.
 
@@ -98,7 +98,6 @@ Job `release` (`ubuntu-latest`, `concurrency: mobile-release`, `environment:` se
 1. Checkout.
 2. `actions/setup-java` (Temurin 17), `subosito/flutter-action` pinned to Flutter 3.41.9.
 3. `ruby/setup-ruby` with `bundler-cache: true`, `working-directory: mobile/android`.
-4. On tag: fail unless `${GITHUB_REF_NAME#v}` equals the pubspec version name.
 5. Write secrets to `$RUNNER_TEMP` with `umask 077`:
    - `ANDROID_UPLOAD_KEYSTORE_BASE64` → `upload.jks`
    - `key.properties` from `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD`,
@@ -119,7 +118,7 @@ credentials are only exposed after approval.
 - The store listing is managed by fastlane only after a one-time `supply init`, and only
   through the separate `listing` lane, so a code release can never overwrite listing
   edits or resubmit the listing for review.
-- Tag releases go to the closed track while the 14-day test is running; production only
+- Merges to main go to the closed track while the 14-day test is running; production only
   via the manual, approved `promote` lane.
 
 ## Risks

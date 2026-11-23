@@ -1,0 +1,133 @@
+name: Release Android app
+
+# Push/merge to `main` that changes the app -> `fastlane closed` (testers get it).
+# Manual run -> any lane. `promote` runs in the protected `play-production` environment
+# (waits for the owner's approval); everything else in `play-testing`.
+# Spec: .kiro/specs/mobile-fastlane-deploy/   Usage: docs/mobile-release.md
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-release.yml"
+      # Listing-only and docs-only changes do not need a new build.
+      # (Publish the listing with the manual `listing` lane.)
+      - "!mobile/android/fastlane/metadata/android/*/images/**"
+      - "!mobile/android/fastlane/metadata/android/*/*.txt"
+      - "!mobile/**/*.md"
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: "fastlane lane to run"
+        required: true
+        default: closed
+        type: choice
+        options: [internal, closed, promote, listing]
+      draft:
+        description: "internal/closed: upload as a draft (review in Play Console first)"
+        required: false
+        default: false
+        type: boolean
+      validate:
+        description: "listing: only validate with Play, do not publish"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: fastlane ${{ github.event_name == 'push' && 'closed' || inputs.lane }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.lane == 'promote' && 'play-production' || 'play-testing' }}
+    env:
+      LANE: ${{ github.event_name == 'push' && 'closed' || inputs.lane }}
+      DRAFT: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || false }}
+      VALIDATE: ${{ github.event_name == 'workflow_dispatch' && inputs.validate || false }}
+      PLAY_CLOSED_TRACK: alpha
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        if: env.LANE == 'internal' || env.LANE == 'closed'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Flutter
+        if: env.LANE == 'internal' || env.LANE == 'closed'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.9
+          cache: true
+
+      - name: Set up Ruby + fastlane
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: mobile/android
+
+      - name: Write credentials to temp files
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          ANDROID_UPLOAD_KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          DART_DEFINES_PROD_JSON: ${{ secrets.DART_DEFINES_PROD_JSON }}
+        run: |
+          set -euo pipefail
+          umask 077
+          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::Secret PLAY_SERVICE_ACCOUNT_JSON is not set in this environment."; exit 1
+          fi
+          printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/play-key.json"
+          echo "PLAY_JSON_KEY_PATH=$RUNNER_TEMP/play-key.json" >> "$GITHUB_ENV"
+
+          if [ "$LANE" = "internal" ] || [ "$LANE" = "closed" ]; then
+            for name in ANDROID_UPLOAD_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_PASSWORD ANDROID_KEY_ALIAS DART_DEFINES_PROD_JSON; do
+              if [ -z "${!name}" ]; then echo "::error::Secret $name is not set in this environment."; exit 1; fi
+            done
+            printf '%s' "$ANDROID_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+            printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=%s\n' \
+              "$ANDROID_KEYSTORE_PASSWORD" "$ANDROID_KEY_PASSWORD" "$ANDROID_KEY_ALIAS" "$RUNNER_TEMP/upload.jks" \
+              > mobile/android/key.properties
+            mkdir -p mobile/dart_defines
+            printf '%s' "$DART_DEFINES_PROD_JSON" > mobile/dart_defines/prod.json
+          fi
+
+      - name: Flutter dependencies
+        if: env.LANE == 'internal' || env.LANE == 'closed'
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Run fastlane
+        working-directory: mobile/android
+        env:
+          FL_PROMOTE_CONFIRMED: ${{ env.LANE == 'promote' && '1' || '' }}
+        run: |
+          set -euo pipefail
+          case "$LANE" in
+            internal|closed) bundle exec fastlane "$LANE" "draft:$DRAFT" ;;
+            promote)         bundle exec fastlane promote ;;
+            listing)         bundle exec fastlane listing "validate:$VALIDATE" ;;
+            *) echo "::error::Unknown lane '$LANE'"; exit 1 ;;
+          esac
+
+      - name: Remove credentials
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/play-key.json" "$RUNNER_TEMP/upload.jks" \
+            mobile/android/key.properties mobile/dart_defines/prod.json

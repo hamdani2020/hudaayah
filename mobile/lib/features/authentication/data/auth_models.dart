@@ -21,6 +21,15 @@ class UserProfile {
         email: json['email'] as String?,
         avatarUrl: json['avatar_url'] as String?,
       );
+
+  /// Same shape as the backend JSON, for the on-device profile cache.
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'provider': provider,
+        'display_name': displayName,
+        'email': email,
+        'avatar_url': avatarUrl,
+      };
 }
 
 /// Token pair + profile returned on successful sign-in.
