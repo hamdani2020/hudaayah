@@ -25,8 +25,8 @@ Run from `mobile/android` (Homebrew `fastlane …` or `bundle exec fastlane …`
      on Play + 1.
 2. **Release notes** (optional): create
    `mobile/android/fastlane/metadata/android/en-US/changelogs/<build number>.txt`
-   (max 500 characters). Run `fastlane check` to see the build number. Without it,
-   `default.txt` is used.
+   (max 500 characters). Run `fastlane check` to see the build number: deleted drafts use
+   up numbers too, so don't guess. Without it, `default.txt` is used.
 3. Commit.
 
 ## Releasing
@@ -81,7 +81,7 @@ To re-import from Play Console: `fastlane supply init` (overwrites the local fil
 | `insufficient authentication scopes` | fastlane did not find the key. Check `~/keys/hudaayah-play.json` exists, or set `PLAY_JSON_KEY_PATH`. |
 | `The caller does not have permission` | Missing permission for the service account in Play Console → Users and permissions. |
 | `Bundle is signed with …, expected the upload key` | `key.properties` points to the wrong keystore. Nothing was uploaded. |
-| `Version code N has already been used` | A build was uploaded outside fastlane at the same moment. Run again; the next number is read from Play. |
+| `Version code N has already been used` | Should not happen: the lookup includes deleted drafts. If it does, another upload happened at the same moment, or the bundle library could not be read (look for "Could not read Play's bundle library" in the log). Run again. |
 | Changelog too long | Shorten `changelogs/<N>.txt` or `default.txt` to 500 characters. |
 
 Passwords in `key.properties` must not contain a backslash (`\`), because Java reads it

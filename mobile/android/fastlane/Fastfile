@@ -169,11 +169,34 @@ rescue StandardError => e
   []
 end
 
-# Highest version code on any track + 1, so a build number is never reused.
+# Every version code ever uploaded (Play's bundle/APK library). This includes builds
+# from deleted drafts, which are not on any track but can never be reused.
+def uploaded_version_codes
+  require "supply"
+  require "supply/options"
+  require "supply/client"
+
+  Supply.config = FastlaneCore::Configuration.create(Supply::Options.available_options, {})
+  client = Supply::Client.make_from_config
+  client.begin_edit(package_name: Supply.config[:package_name])
+  begin
+    (Array(client.aab_version_codes) + Array(client.apks_version_codes)).map(&:to_i)
+  ensure
+    client.abort_current_edit
+  end
+rescue StandardError => e
+  UI.important("Could not read Play's bundle library: #{e.message.lines.first&.strip}")
+  []
+end
+
+# Highest version code anywhere on Play + 1, so a build number is never reused:
+# release tracks plus the bundle library (drafts that were deleted still count).
 def next_build_number
   tracks = ["internal", CLOSED_TRACK, "beta", "production"].uniq
   codes = tracks.flat_map { |t| Array(track_codes(t)) }.map(&:to_i)
-  (codes.max || 0) + 1
+  library = uploaded_version_codes
+  UI.message("Highest build on tracks: #{codes.max || 'none'}, in bundle library: #{library.max || 'none'}")
+  ((codes + library).max || 0) + 1
 end
 
 def pubspec_version_name

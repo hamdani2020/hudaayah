@@ -18,8 +18,9 @@ lanes never upload the listing.
 - Each lane prints the version name, build number and track it released.
 
 ## R2 Automatic build number
-- The build number is the highest version code on any Play track (internal, closed,
-  open, production) plus 1, read from Play at release time.
+- The build number is the highest version code anywhere on Play plus 1, read at release
+  time: every track (internal, closed, open, production) **and** the bundle library, which
+  still holds builds from deleted drafts (Play never frees a used version code).
 - `pubspec.yaml` is the source of the **version name** only (e.g. `1.0.1`). The `+N`
   in `pubspec.yaml` is ignored by releases.
 - A release never reuses or lowers a build number.
