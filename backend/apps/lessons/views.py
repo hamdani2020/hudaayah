@@ -7,7 +7,7 @@ from apps.common.errors import AppError
 
 from .models import Lesson
 from .serializers import LessonListItemSerializer, LessonSerializer
-from .services import build_lesson_content
+from .services import build_lesson_audio, build_lesson_content, resolve_reciter_id
 
 
 class LessonListView(ListAPIView):
@@ -54,5 +54,9 @@ class LessonDetailView(RetrieveAPIView):
         lesson = self.get_object()
         data = self.get_serializer(lesson).data
         # Assemble QF content live (adapter enforces ≤1wk cache).
-        data["content"] = build_lesson_content(lesson)
+        audio = build_lesson_audio(
+            lesson, resolve_reciter_id(request.query_params.get("reciter"), request.user)
+        )
+        data["content"] = build_lesson_content(lesson, audio)
+        data["audio"] = audio
         return Response(data)

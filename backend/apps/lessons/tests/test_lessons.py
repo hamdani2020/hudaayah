@@ -41,15 +41,25 @@ def _make_lesson(status=ContentStatus.PUBLISHED):
 class _FakeQF:
     def get_word_by_word(self, verse_key):
         return {"verse": {"text_uthmani": "بِسْمِ ٱللَّهِ",
-                          "words": [{"text_uthmani": "بِسْمِ",
+                          "words": [{"position": 1, "char_type_name": "word",
+                                     "text_uthmani": "بِسْمِ",
                                      "translation": {"text": "In (the) name"},
-                                     "transliteration": {"text": "bis'mi"}}]}}
+                                     "transliteration": {"text": "bis'mi"}},
+                                    {"position": 2, "char_type_name": "end",
+                                     "text_uthmani": "١"}]}}
 
     def get_translation(self, verse_key, translation_id):
         return {"translations": [{"text": "In the name of God..."}]}
 
     def get_audio(self, verse_key, reciter_id):
         return {"audio_files": [{"url": "Alafasy/mp3/001001.mp3"}]}
+
+    def get_reciters(self):
+        return [{"id": 7, "name": "Alafasy", "style": "Murattal", "has_per_ayah_audio": True}]
+
+    def get_chapter_audio(self, reciter_id, chapter, segments=True):
+        from apps.quran_content.client import QFContentError
+        raise QFContentError(code="qf_not_found")
 
 
 def test_lesson_requires_auth():
@@ -67,6 +77,8 @@ def test_published_lesson_returns_assembled_content():
     assert ayah["arabic"] == "بِسْمِ ٱللَّهِ"
     assert ayah["translation"] == "In the name of God..."
     assert ayah["audio_url"].startswith("https://")
+    # Word position is 1-based (matches audio word_index); end marker is skipped.
+    assert [w["position"] for w in ayah["words"]] == [1]
     assert "Quran Foundation" in body["content"]["attribution"]
 
 
