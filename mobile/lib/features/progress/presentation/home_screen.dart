@@ -120,7 +120,7 @@ class HomeScreen extends ConsumerWidget {
       subtitle: subtitle,
       percent: focus.isCompleted ? 1.0 : 0.0,
       buttonLabel: focus.isCompleted ? 'Review $name' : 'Continue Reading',
-      onContinue: () => context.go('/reader/${focus.lessonId}'),
+      onContinue: () => context.push('/reader/${focus.lessonId}'),
     );
   }
 }

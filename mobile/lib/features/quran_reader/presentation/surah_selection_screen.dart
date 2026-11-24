@@ -135,7 +135,7 @@ class _SurahSelectionScreenState extends ConsumerState<SurahSelectionScreen> {
             surahName: resumeEntry.displayName,
             subtitle: '${resumeEntry.surahMeaning} • '
                 '${resumeEntry.surahAyahCount} Ayahs',
-            onTap: () => context.go('/reader/${resumeEntry!.id}'),
+            onTap: () => context.push('/reader/${resumeEntry!.id}'),
           ),
           const SizedBox(height: 16),
         ],
@@ -162,7 +162,7 @@ class _SurahSelectionScreenState extends ConsumerState<SurahSelectionScreen> {
               arabicTitle: s.surahNameAr,
               completed: completed,
               progress: completed ? 1 : 0,
-              onTap: () => context.go('/reader/${s.id}'),
+              onTap: () => context.push('/reader/${s.id}'),
             );
           }),
           const SizedBox(height: 12),

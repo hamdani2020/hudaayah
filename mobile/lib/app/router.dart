@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../features/authentication/application/auth_controller.dart';
 import '../features/authentication/presentation/sign_in_screen.dart';
 import '../features/exercises/presentation/exercise_screen.dart';
+import '../features/legal/presentation/legal_page_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 import '../features/progress/presentation/home_screen.dart';
@@ -67,6 +68,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (loc == '/splash') return signedIn ? '/home' : '/onboarding';
 
       final onAuthFlow = loc == '/auth' || loc == '/onboarding';
+      // Legal pages are public: reachable signed in or out, never redirected.
+      if (loc.startsWith('/legal/')) return null;
       if (!signedIn && !onAuthFlow) return '/auth';
       // Signed-in learners never see onboarding or sign-in again.
       if (signedIn && onAuthFlow) return '/home';
@@ -87,6 +90,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/auth',
         name: 'auth',
         builder: (context, state) => const SignInScreen(),
+      ),
+      // Public in-app legal pages (privacy, terms, delete-account).
+      GoRoute(
+        path: '/legal/:page',
+        name: 'legal',
+        builder: (context, state) =>
+            LegalPageScreen(page: state.pathParameters['page'] ?? ''),
       ),
       // Full-screen lesson practice (no bottom nav while practising).
       GoRoute(

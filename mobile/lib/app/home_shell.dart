@@ -48,6 +48,18 @@ class HomeShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onHome = navigationShell.currentIndex == 0;
+    return PopScope(
+      // On Home, back leaves the app; on other tabs it returns to Home first.
+      canPop: onHome,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) navigationShell.goBranch(0);
+      },
+      child: _buildScaffold(),
+    );
+  }
+
+  Widget _buildScaffold() {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: DecoratedBox(

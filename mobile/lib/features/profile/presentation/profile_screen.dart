@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/config/app_config.dart';
-import '../../../core/utils/external_link.dart';
 import '../../../core/widgets/hudaayah_top_bar.dart';
 import '../../../core/widgets/stat_card.dart';
 import '../../authentication/application/auth_controller.dart';
 import '../../progress/data/progress_models.dart';
 import '../../progress/data/progress_repository.dart';
 import '../application/reminder_controller.dart';
+import 'reminder_actions.dart';
 import 'widgets/history_tile.dart';
 import 'widgets/settings_tile.dart';
 
@@ -28,45 +29,6 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  Future<void> _setReminderEnabled(bool enabled) async {
-    final result =
-        await ref.read(reminderControllerProvider.notifier).setEnabled(enabled);
-    if (!mounted) return;
-    _showReminderResult(result,
-        okMessage: enabled ? 'Daily reminder is on.' : 'Daily reminder is off.');
-  }
-
-  Future<void> _pickReminderTime(ReminderSettings current) async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: current.time,
-      helpText: 'Daily reminder time',
-    );
-    if (picked == null || !mounted) return;
-    final controller = ref.read(reminderControllerProvider.notifier);
-    var result = await controller.setTime(picked);
-    // Choosing a time is a clear sign the learner wants the reminder.
-    if (result == ReminderChangeResult.ok && !current.enabled) {
-      result = await controller.setEnabled(true);
-    }
-    if (!mounted) return;
-    _showReminderResult(result,
-        okMessage: 'Daily reminder set for ${picked.format(context)}.');
-  }
-
-  void _showReminderResult(ReminderChangeResult result, {required String okMessage}) {
-    final message = switch (result) {
-      ReminderChangeResult.ok => okMessage,
-      ReminderChangeResult.permissionDenied =>
-        'Notifications are off for Hudaayah. You can allow them in your phone settings.',
-      ReminderChangeResult.failed =>
-        'We could not set the reminder. Please try again.',
-    };
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -104,8 +66,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   if (completedLessons.isEmpty)
                     Text(
                       'Your completed lessons will appear here as you learn.',
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: AppTheme.onSurfaceVariant),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.onSurfaceVariant,
+                      ),
                     )
                   else
                     for (final l in completedLessons) ...[
@@ -148,29 +111,32 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           subtitle: reminder == null
                               ? null
                               : reminder.enabled
-                                  ? 'Every day at ${reminder.time.format(context)}'
-                                  : 'Off · tap to set a time',
+                              ? 'Every day at ${reminder.time.format(context)}'
+                              : 'Off · tap to set a time',
                           onTap: reminder == null
                               ? null
-                              : () => _pickReminderTime(reminder),
+                              : () => pickReminderTime(context, ref, reminder),
                           trailing: Switch(
                             value: reminder?.enabled ?? false,
                             onChanged: reminder == null
                                 ? null
-                                : (v) => _setReminderEnabled(v),
+                                : (v) => setReminderEnabled(context, ref, v),
                           ),
                         ),
                         SettingsTile(
                           icon: Icons.security,
                           title: 'Privacy Policy',
-                          onTap: () => openExternalLink(
-                              context, AppConfig.privacyPolicyUrl),
+                          onTap: () => context.push('/legal/privacy'),
                         ),
                         SettingsTile(
                           icon: Icons.description_outlined,
                           title: 'Terms of Use',
-                          onTap: () =>
-                              openExternalLink(context, AppConfig.termsUrl),
+                          onTap: () => context.push('/legal/terms'),
+                        ),
+                        SettingsTile(
+                          icon: Icons.help_outline,
+                          title: 'Account deletion info',
+                          onTap: () => context.push('/legal/delete-account'),
                         ),
                       ],
                     ),
@@ -207,22 +173,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         Text(
                           AppConfig.qfAttribution,
                           textAlign: TextAlign.center,
-                          style: theme.textTheme.labelSmall
-                              ?.copyWith(color: AppTheme.onSurfaceVariant),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: AppTheme.onSurfaceVariant,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           AppConfig.fontAttribution,
                           textAlign: TextAlign.center,
-                          style: theme.textTheme.labelSmall
-                              ?.copyWith(color: AppTheme.onSurfaceVariant),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: AppTheme.onSurfaceVariant,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'Hudaayah • Built with reverence & care',
                           textAlign: TextAlign.center,
-                          style: theme.textTheme.labelSmall
-                              ?.copyWith(color: AppTheme.onSurfaceVariant),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: AppTheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -260,8 +229,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                    'This permanently deletes your account and all your learning '
-                    'progress, XP and streak. This cannot be undone.'),
+                  'This permanently deletes your account and all your learning '
+                  'progress, XP and streak. This cannot be undone.',
+                ),
                 if (error != null) ...[
                   const SizedBox(height: 12),
                   Text(error!, style: const TextStyle(color: AppTheme.error)),
@@ -291,7 +261,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           if (ctx.mounted) {
                             setDialogState(() {
                               deleting = false;
-                              error = 'We could not delete your account. '
+                              error =
+                                  'We could not delete your account. '
                                   'Please check your connection and try again.';
                             });
                           }
@@ -353,11 +324,15 @@ class _ProfileCard extends StatelessWidget {
                   CircleAvatar(
                     radius: 32,
                     backgroundColor: AppTheme.surfaceContainerHigh,
-                    backgroundImage:
-                        avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                    backgroundImage: avatarUrl != null
+                        ? NetworkImage(avatarUrl)
+                        : null,
                     child: avatarUrl == null
-                        ? const Icon(Icons.person,
-                            size: 32, color: AppTheme.onSurfaceVariant)
+                        ? const Icon(
+                            Icons.person,
+                            size: 32,
+                            color: AppTheme.onSurfaceVariant,
+                          )
                         : null,
                   ),
                   Positioned(
@@ -371,8 +346,11 @@ class _ProfileCard extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: AppTheme.secondaryFixed,
                       ),
-                      child: const Icon(Icons.verified,
-                          size: 14, color: AppTheme.secondary),
+                      child: const Icon(
+                        Icons.verified,
+                        size: 14,
+                        color: AppTheme.secondary,
+                      ),
                     ),
                   ),
                 ],
@@ -382,16 +360,20 @@ class _ProfileCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name,
-                        style: theme.textTheme.headlineSmall
-                            ?.copyWith(color: AppTheme.primary)),
+                    Text(
+                      name,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: AppTheme.primary,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       memberLine,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(color: AppTheme.onSurfaceVariant),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppTheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -459,9 +441,12 @@ class _WeeklyRhythm extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Weekly Discipline',
-              style: theme.textTheme.headlineSmall
-                  ?.copyWith(color: AppTheme.primary)),
+          Text(
+            'Weekly Discipline',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: AppTheme.primary,
+            ),
+          ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -496,11 +481,13 @@ class _DaySlot extends StatelessWidget {
     final theme = Theme.of(context);
     return Column(
       children: [
-        Text(label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: isToday ? AppTheme.primary : AppTheme.onSurfaceVariant,
-              fontWeight: isToday ? FontWeight.w700 : null,
-            )),
+        Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: isToday ? AppTheme.primary : AppTheme.onSurfaceVariant,
+            fontWeight: isToday ? FontWeight.w700 : null,
+          ),
+        ),
         const SizedBox(height: 6),
         Container(
           width: 36,

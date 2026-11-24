@@ -29,7 +29,35 @@ class ExerciseScreen extends ConsumerWidget {
     final sessionAsync = ref.watch(exerciseSessionProvider(arg));
     final controller = ref.read(exerciseSessionProvider(arg).notifier);
 
-    return Scaffold(
+    Future<void> confirmExit() async {
+      final leave = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Leave this lesson?'),
+          content: const Text("Your answers so far won't be saved."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Keep practising'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Leave'),
+            ),
+          ],
+        ),
+      );
+      if (leave == true && context.mounted) {
+        context.canPop() ? context.pop() : context.go('/home');
+      }
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) confirmExit();
+      },
+      child: Scaffold(
       backgroundColor: AppTheme.surface,
       body: SafeArea(
         child: sessionAsync.when(
@@ -43,7 +71,7 @@ class ExerciseScreen extends ConsumerWidget {
             if (session.isComplete) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (context.mounted) {
-                  context.go('/lesson/${lesson.id}/complete',
+                  context.pushReplacement('/lesson/${lesson.id}/complete',
                       extra: session.summary);
                 }
               });
@@ -60,10 +88,11 @@ class ExerciseScreen extends ConsumerWidget {
               exercise: exercise,
               onSubmit: controller.submit,
               onNext: controller.next,
-              onExit: () => context.go('/home'),
+              onExit: confirmExit,
             );
           },
         ),
+      ),
       ),
     );
   }

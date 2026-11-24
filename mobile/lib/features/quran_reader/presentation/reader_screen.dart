@@ -125,7 +125,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           const SizedBox(height: 8),
                           FilledButton.icon(
                             onPressed: () =>
-                                context.go('/lesson/${lesson.id}/practice'),
+                                context.push('/lesson/${lesson.id}/practice'),
                             icon: const Icon(Icons.quiz),
                             label: const Text('Practice this lesson'),
                           ),

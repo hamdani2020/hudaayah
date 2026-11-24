@@ -8,7 +8,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../../../app/theme.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/errors/api_exception.dart';
-import '../../../core/utils/external_link.dart';
 import '../../../core/widgets/buttons.dart';
 import '../../../core/widgets/info_card.dart';
 import '../application/auth_controller.dart';
@@ -44,7 +43,12 @@ class SignInScreen extends ConsumerWidget {
       });
     });
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go('/onboarding');
+      },
+      child: Scaffold(
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -100,6 +104,7 @@ class SignInScreen extends ConsumerWidget {
           ],
         ),
       ),
+      ),
     );
   }
 }
@@ -121,9 +126,9 @@ class _LegalLinksState extends State<_LegalLinks> {
   void initState() {
     super.initState();
     _terms = TapGestureRecognizer()
-      ..onTap = () => openExternalLink(context, AppConfig.termsUrl);
+      ..onTap = () => context.push('/legal/terms');
     _privacy = TapGestureRecognizer()
-      ..onTap = () => openExternalLink(context, AppConfig.privacyPolicyUrl);
+      ..onTap = () => context.push('/legal/privacy');
   }
 
   @override
