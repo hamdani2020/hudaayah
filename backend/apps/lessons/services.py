@@ -57,6 +57,7 @@ def build_lesson_content(lesson: Lesson, audio: dict | None = None) -> dict:
             or verse.get("text_uthmani")
             or verse.get("text_indopak")
         )
+        entry["text_has_ayah_number"] = has_ayah_number(entry["arabic"])
         entry["words"] = _extract_words(verse.get("words", []))
 
         # Layer 2 — translation (attributed, labeled).
@@ -190,12 +191,35 @@ def _ref_int(source) -> int | None:
         return None
 
 
+_NON_WORD_CHAR_TYPES = frozenset({"end", "pause", "sajdah", "rub-el-hizb"})
+_AYAH_SIGN = "\u06dd"
+# Arabic-Indic (U+0660-0669) and Eastern Arabic-Indic (U+06F0-06F9) digits.
+_AYAH_DIGITS = frozenset(chr(c) for c in (*range(0x660, 0x66A), *range(0x6F0, 0x6FA)))
+
+
+def has_ayah_number(text: str | None) -> bool:
+    """True if the Arabic text already ends with an ayah-number marker.
+
+    Read-only check; the text is never changed.
+    """
+    if not text:
+        return False
+    s = text.rstrip()
+    if not s:
+        return False
+    if s[-1] in _AYAH_DIGITS:
+        return True
+    # U+06DD may directly end the text, or precede the digits (digits handled above).
+    return s[-1] == _AYAH_SIGN
+
+
 def _extract_words(words: list) -> list[dict]:
     out = []
     for w in words or []:
         # The end-of-ayah marker has no audio segment; skip it. QF `position` is
         # 1-based and equals the segment `word_index` (see reader-audio design).
-        if w.get("char_type_name") == "end":
+        # Other non-word signs (pause, sajdah, rub-el-hizb) have no meaning to show.
+        if w.get("char_type_name") in _NON_WORD_CHAR_TYPES:
             continue
         out.append({
             "position": w.get("position"),

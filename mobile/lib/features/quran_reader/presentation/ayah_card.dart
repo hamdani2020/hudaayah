@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
 import '../application/audio_controller.dart';
+import '../application/reader_settings.dart';
 import '../data/lesson_models.dart';
 
 /// Renders a single ayah as the Stitch ayah card (design-mapping §2 screen 06)
@@ -11,7 +12,7 @@ import '../data/lesson_models.dart';
 ///   2. Word-by-word + transliteration (educational aid).
 ///   3. Translation — clearly labeled, never styled as the Quran itself.
 ///
-/// Presentational. [fontScale] and [showTranslation] are local UI preferences
+/// Presentational. [fontScale] and [displayMode] are UI preferences
 /// forwarded from the reader; they default to a normal, fully-visible card so
 /// the public widget contract is unchanged for other callers.
 class AyahCard extends ConsumerWidget {
@@ -19,13 +20,16 @@ class AyahCard extends ConsumerWidget {
     super.key,
     required this.ayah,
     this.fontScale = 1.0,
-    this.showTranslation = true,
+    this.displayMode = ReaderDisplayMode.full,
     this.noWordHighlightNote = false,
   });
 
   final Ayah ayah;
   final double fontScale;
-  final bool showTranslation;
+
+  /// Which layers to show: Arabic always; translation in arabicTranslation and
+  /// full; word chips in full only.
+  final ReaderDisplayMode displayMode;
 
   /// The chosen reciter has no word timings: while this ayah plays, say so.
   final bool noWordHighlightNote;
@@ -107,18 +111,23 @@ class AyahCard extends ConsumerWidget {
                         style: arabicStyle,
                         children: [
                           ...(wordSpans ?? [TextSpan(text: ayah.arabic!)]),
-                          const TextSpan(text: ' '),
-                          TextSpan(
-                            text: _endOfAyahMarker(ayah.verseKey),
-                            style: const TextStyle(color: AppTheme.secondary),
-                          ),
+                          // The text already ends with its own ayah-number
+                          // marker for some QF text types; add ours only if not.
+                          if (!ayah.textHasAyahNumber) ...[
+                            const TextSpan(text: ' '),
+                            TextSpan(
+                              text: _endOfAyahMarker(ayah.verseKey),
+                              style: const TextStyle(color: AppTheme.secondary),
+                            ),
+                          ],
                         ],
                       ),
                       textAlign: TextAlign.right,
                     ),
                   ),
                 // Layer 2 — word-by-word chips (transliteration + meaning).
-                if (ayah.words.isNotEmpty) ...[
+                if (displayMode == ReaderDisplayMode.full &&
+                    ayah.words.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Directionality(
                     textDirection: TextDirection.rtl,
@@ -145,7 +154,8 @@ class AyahCard extends ConsumerWidget {
                   ),
                 ],
                 // Layer 3 — translation, clearly labeled and visually secondary.
-                if (showTranslation && ayah.translation != null) ...[
+                if (displayMode != ReaderDisplayMode.arabicOnly &&
+                    ayah.translation != null) ...[
                   const SizedBox(height: 14),
                   Text('TRANSLATION', style: theme.textTheme.labelSmall),
                   const SizedBox(height: 4),
@@ -233,8 +243,12 @@ class AyahCard extends ConsumerWidget {
     ];
   }
 
-  /// Arabic-Indic numeral between ornate ayah-end brackets, derived from the
-  /// verse key's ayah number (not Quran text — a decorative verse marker).
+  /// Fallback ayah-end marker: the ayah number in Arabic-Indic digits
+  /// (U+0660..0669), derived from the verse key (not Quran text).
+  ///
+  /// No U+06DD prefix: UthmanicHafs substitutes a run of Arabic-Indic digits
+  /// (`rlig`) with one glyph that already includes the ornate ring around the
+  /// number, so a leading U+06DD would draw a second, empty ring.
   String _endOfAyahMarker(String verseKey) {
     final ayahNumber = verseKey.contains(':') ? verseKey.split(':').last : verseKey;
     const western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
@@ -243,7 +257,7 @@ class AyahCard extends ConsumerWidget {
     for (var i = 0; i < western.length; i++) {
       converted = converted.replaceAll(western[i], arabic[i]);
     }
-    return '\u06DD$converted';
+    return converted;
   }
 }
 

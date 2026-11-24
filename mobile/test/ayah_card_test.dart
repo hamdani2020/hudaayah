@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hudaayah/app/theme.dart';
 import 'package:hudaayah/features/quran_reader/application/audio_controller.dart';
+import 'package:hudaayah/features/quran_reader/application/reader_settings.dart';
 import 'package:hudaayah/features/quran_reader/data/lesson_models.dart';
 import 'package:hudaayah/features/quran_reader/presentation/ayah_card.dart';
 
@@ -18,9 +20,16 @@ class _FakeAudio extends AudioController {
 // compares strings, so no Quran text is needed in tests.
 const _w = ['w1', 'w2', 'w3'];
 
-Ayah _ayah({List<int?> positions = const [1, 2, 3], String? arabic}) => Ayah(
+Ayah _ayah({
+  List<int?> positions = const [1, 2, 3],
+  String? arabic,
+  bool hasNumber = false,
+}) =>
+    Ayah(
+      textHasAyahNumber: hasNumber,
       verseKey: '1:1',
       arabic: arabic ?? _w.join(' '),
+      translation: 'tr-text',
       audioUrl: 'https://example.test/a.mp3',
       words: [
         for (var i = 0; i < _w.length; i++)
@@ -33,6 +42,7 @@ Future<void> _pump(
   Ayah ayah,
   AudioState audio, {
   bool note = false,
+  ReaderDisplayMode mode = ReaderDisplayMode.full,
 }) async {
   await tester.pumpWidget(ProviderScope(
     key: UniqueKey(),
@@ -40,7 +50,11 @@ Future<void> _pump(
     child: MaterialApp(
       home: Scaffold(
         body: SingleChildScrollView(
-          child: AyahCard(ayah: ayah, noWordHighlightNote: note),
+          child: AyahCard(
+            ayah: ayah,
+            noWordHighlightNote: note,
+            displayMode: mode,
+          ),
         ),
       ),
     ),
@@ -60,6 +74,31 @@ List<TextSpan> _arabicSpans(WidgetTester tester) {
 bool _highlighted(TextSpan s) => s.style?.backgroundColor != null;
 
 void main() {
+  testWidgets('adds one app marker (digits only) when the text has none',
+      (tester) async {
+    await _pump(tester, _ayah(), const AudioState());
+    final rich = tester.widgetList<RichText>(find.byType(RichText)).firstWhere(
+          (r) => r.text.toPlainText().contains('w1'),
+        );
+    expect(rich.text.toPlainText(), 'w1 w2 w3 \u0661');
+  });
+
+  testWidgets('adds no marker when the text already has one', (tester) async {
+    await _pump(tester, _ayah(hasNumber: true), const AudioState());
+    final rich = tester.widgetList<RichText>(find.byType(RichText)).firstWhere(
+          (r) => r.text.toPlainText().contains('w1'),
+        );
+    expect(rich.text.toPlainText(), 'w1 w2 w3');
+  });
+
+  test('textHasAyahNumber defaults to false when missing', () {
+    expect(Ayah.fromJson({'verse_key': '1:1'}).textHasAyahNumber, isFalse);
+    expect(
+        Ayah.fromJson({'verse_key': '1:1', 'text_has_ayah_number': true})
+            .textHasAyahNumber,
+        isTrue);
+  });
+
   testWidgets('highlights only the span of the current word', (tester) async {
     await _pump(tester, _ayah(),
         const AudioState(verseKey: '1:1', currentWordPosition: 2, playing: true));
@@ -74,7 +113,7 @@ void main() {
     final rich = tester.widgetList<RichText>(find.byType(RichText)).firstWhere(
           (r) => r.text.toPlainText().contains('w1'),
         );
-    expect(rich.text.toPlainText(), startsWith('w1 w2 w3 '));
+    expect(rich.text.toPlainText(), startsWith('w1 w2 w3'));
   });
 
   testWidgets('no highlight when another ayah is playing', (tester) async {
@@ -145,5 +184,68 @@ void main() {
     await _pump(tester, _ayah(),
         const AudioState(verseKey: '1:1', playing: true));
     expect(find.text(note), findsNothing);
+  });
+
+  group('display modes', () {
+    testWidgets('arabicOnly: Arabic and audio only', (tester) async {
+      await _pump(tester, _ayah(), const AudioState(),
+          mode: ReaderDisplayMode.arabicOnly);
+      expect(_arabicSpans(tester), isNotEmpty);
+      expect(find.text('t0'), findsNothing);
+      expect(find.text('TRANSLATION'), findsNothing);
+      expect(find.text('tr-text'), findsNothing);
+      expect(find.byIcon(Icons.play_circle), findsOneWidget);
+    });
+
+    testWidgets('arabicTranslation: labelled translation, no word chips',
+        (tester) async {
+      await _pump(tester, _ayah(), const AudioState(),
+          mode: ReaderDisplayMode.arabicTranslation);
+      expect(_arabicSpans(tester), isNotEmpty);
+      expect(find.text('t0'), findsNothing);
+      expect(find.text('TRANSLATION'), findsOneWidget);
+      expect(find.text('tr-text'), findsOneWidget);
+      expect(find.byIcon(Icons.play_circle), findsOneWidget);
+    });
+
+    testWidgets('full: word chips and labelled translation', (tester) async {
+      await _pump(tester, _ayah(), const AudioState());
+      expect(_arabicSpans(tester), isNotEmpty);
+      expect(find.text('t0'), findsOneWidget);
+      expect(find.text('TRANSLATION'), findsOneWidget);
+      expect(find.text('tr-text'), findsOneWidget);
+      expect(find.byIcon(Icons.play_circle), findsOneWidget);
+    });
+
+    testWidgets('font scale and word highlight apply in every mode',
+        (tester) async {
+      for (final m in ReaderDisplayMode.values) {
+        await tester.pumpWidget(ProviderScope(
+          key: UniqueKey(),
+          overrides: [
+            audioControllerProvider.overrideWith(() => _FakeAudio(
+                const AudioState(
+                    verseKey: '1:1', currentWordPosition: 2, playing: true))),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: AyahCard(ayah: _ayah(), fontScale: 1.5, displayMode: m),
+              ),
+            ),
+          ),
+        ));
+        final rich = tester
+            .widgetList<RichText>(find.byType(RichText))
+            .firstWhere((r) => r.text.toPlainText().contains('w1'));
+        final root = (rich.text as TextSpan).children!.single as TextSpan;
+        expect(root.style!.fontSize,
+            AppTextStyles.arabicAyahLg.fontSize! * 1.5,
+            reason: '$m');
+        final words =
+            _arabicSpans(tester).where((s) => _w.contains(s.text)).toList();
+        expect(words.map(_highlighted), [false, true, false], reason: '$m');
+      }
+    });
   });
 }

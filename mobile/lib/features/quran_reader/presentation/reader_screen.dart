@@ -7,9 +7,11 @@ import '../../../app/theme.dart';
 import '../../../core/errors/api_exception.dart';
 import '../application/audio_controller.dart';
 import '../application/reader_follow.dart';
+import '../application/reader_settings.dart';
 import '../data/lesson_repository.dart';
 import 'ayah_card.dart';
 import 'widgets/audio_strip.dart';
+import 'widgets/reader_display_sheet.dart';
 import 'widgets/reader_floating_controls.dart';
 import 'widgets/reciter_fallback_notice.dart';
 
@@ -19,7 +21,7 @@ import 'widgets/reciter_fallback_notice.dart';
 /// "Practice this lesson" CTA, and the visible QF attribution.
 ///
 /// Presentational: all content comes from the backend; no progression logic.
-/// Font size and translation visibility are local UI state only (no API).
+/// Font size is local UI state; the reading view is a saved device setting.
 class ReaderScreen extends ConsumerStatefulWidget {
   const ReaderScreen({super.key, required this.lessonId});
 
@@ -32,7 +34,6 @@ class ReaderScreen extends ConsumerStatefulWidget {
 class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   // Local-only reader preferences (no controller/API involvement).
   double _fontScale = 1.0;
-  bool _showTranslation = true;
 
   final _itemScroll = ItemScrollController();
   final _itemPositions = ItemPositionsListener.create();
@@ -98,8 +99,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       setState(() => _fontScale = (_fontScale - 0.1).clamp(0.8, 1.6));
   void _increaseFont() =>
       setState(() => _fontScale = (_fontScale + 0.1).clamp(0.8, 1.6));
-  void _toggleTranslation() =>
-      setState(() => _showTranslation = !_showTranslation);
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +106,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     final lessonAsync = ref.watch(lessonProvider(widget.lessonId));
     final audio = ref.watch(audioControllerProvider);
     final following = ref.watch(readerFollowProvider);
+    final displayMode = ref.watch(readerDisplayModeProvider).valueOrNull ??
+        ReaderDisplayMode.full;
 
     ref.listen(audioControllerProvider, _onRecitedAyahChanged);
 
@@ -197,7 +198,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                               child: AyahCard(
                                 ayah: lesson.ayahs[i],
                                 fontScale: _fontScale,
-                                showTranslation: _showTranslation,
+                                displayMode: displayMode,
                                 noWordHighlightNote: lesson.audio != null &&
                                     !lesson.audio!.hasWordTimings,
                               ),
@@ -250,10 +251,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 bottom: 16,
                 child: Center(
                   child: ReaderFloatingControls(
-                    translationVisible: _showTranslation,
                     onDecreaseFont: _decreaseFont,
                     onIncreaseFont: _increaseFont,
-                    onToggleTranslation: _toggleTranslation,
+                    onOpenView: () => showReaderDisplaySheet(context),
                   ),
                 ),
               ),

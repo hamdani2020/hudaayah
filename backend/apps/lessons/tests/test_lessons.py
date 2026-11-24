@@ -98,3 +98,63 @@ def test_mark_published_stamps_audit():
     assert lesson.status == ContentStatus.PUBLISHED
     assert lesson.approved_by_id == staff.id
     assert lesson.approved_at is not None
+
+
+# --- reader-display D2: word chips and ayah-number detection ---------------------
+
+def _word(pos, char_type, text="كلمة"):
+    return {"position": pos, "char_type_name": char_type, "text_qpc_hafs": text,
+            "translation": {"text": "t"}, "transliteration": {"text": "tr"}}
+
+
+class _QFWithText:
+    """Fake QF returning a chosen verse text/fields, as the two QF text types do."""
+
+    def __init__(self, verse):
+        self._verse = verse
+
+    def get_word_by_word(self, verse_key):
+        return {"verse": self._verse}
+
+    def get_translation(self, verse_key, translation_id):
+        return {"translations": [{"text": "x"}]}
+
+    def get_audio(self, verse_key, reciter_id):
+        return {"audio_files": [{"url": "Alafasy/mp3/001001.mp3"}]}
+
+    def get_reciters(self):
+        return []
+
+
+def _fetch_ayah(verse):
+    lesson = _make_lesson()
+    with patch("apps.lessons.services.get_client", return_value=_QFWithText(verse)):
+        resp = _auth_client().get(f"/api/v1/lessons/{lesson.id}/")
+    assert resp.status_code == 200
+    return resp.json()["content"]["ayahs"][0]
+
+
+def test_qpc_hafs_text_with_marker_is_flagged():
+    ayah = _fetch_ayah({"text_qpc_hafs": "بِسْمِ ٱللَّهِ\u00a0١", "words": []})
+    assert ayah["arabic"] == "بِسْمِ ٱللَّهِ\u00a0١"  # text untouched
+    assert ayah["text_has_ayah_number"] is True
+
+
+def test_qpc_hafs_text_with_sign_and_eastern_digit_is_flagged():
+    ayah = _fetch_ayah({"text_qpc_hafs": "بِسْمِ\u00a0\u06dd۲ ", "words": []})
+    assert ayah["text_has_ayah_number"] is True
+
+
+def test_uthmani_text_without_marker_is_not_flagged():
+    ayah = _fetch_ayah({"text_uthmani": "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ", "words": []})
+    assert ayah["arabic"] == "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ"
+    assert ayah["text_has_ayah_number"] is False
+
+
+def test_non_word_entries_are_dropped_and_positions_kept():
+    ayah = _fetch_ayah({
+        "text_uthmani": "x",
+        "words": [_word(1, "word"), _word(2, "pause"), _word(3, "word"),
+                  _word(4, "sajdah"), _word(5, "rub-el-hizb"), _word(6, "end", "١")],
+    })
+    assert [w["position"] for w in ayah["words"]] == [1, 3]

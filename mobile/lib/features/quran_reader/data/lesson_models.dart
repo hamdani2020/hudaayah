@@ -31,12 +31,17 @@ class Ayah {
   final String? audioUrl;
   final List<WordPiece> words;
 
+  /// True when [arabic] already ends with its own ayah-number marker, so the
+  /// app must not draw another. Missing from the response means false.
+  final bool textHasAyahNumber;
+
   const Ayah({
     required this.verseKey,
     this.arabic,
     this.translation,
     this.audioUrl,
     this.words = const [],
+    this.textHasAyahNumber = false,
   });
 
   factory Ayah.fromJson(Map<String, dynamic> j) => Ayah(
@@ -47,6 +52,7 @@ class Ayah {
         words: ((j['words'] as List?) ?? [])
             .map((w) => WordPiece.fromJson((w as Map).cast<String, dynamic>()))
             .toList(),
+        textHasAyahNumber: j['text_has_ayah_number'] as bool? ?? false,
       );
 }
 

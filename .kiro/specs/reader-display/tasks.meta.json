@@ -1,0 +1,138 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "D1 Confirm the three markers on a device or emulator screenshot (Al-Fatihah). (R1)": [
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795542395675
+      },
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795542402503
+      },
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795544224557
+      }
+    ],
+    "D2 Backend: drop non-word entries from word chips, add `position`, add": [
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795542395733
+      },
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795544227839
+      },
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795544489703
+      }
+    ],
+    "D3 App: show the app marker only when the text has none. (R1)": [
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795542395766
+      },
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795544492942
+      },
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795545065824
+      }
+    ],
+    "D4 `ReaderDisplayMode` setting (shared_preferences, default full). (R2)": [
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795542395799
+      },
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795545069323
+      },
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795545498210
+      }
+    ],
+    "D5 `AyahCard` renders per mode; reader \"View\" sheet replaces the translation toggle. (R2)": [
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795542395831
+      },
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795545502018
+      },
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795546280603
+      }
+    ],
+    "D6 Profile \"Reading view\" row opening the same sheet. (R2)": [
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795542395864
+      },
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795546284557
+      },
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795547675109
+      }
+    ],
+    "D7 `flutter analyze`, backend tests, release build. (R1, R2)": [
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795542395889
+      },
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795547678814
+      },
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795547955873
+      }
+    ],
+    "O1 Al-Fatihah and Al-Baqarah 1–5: one marker per ayah, no marker chip.": [
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795542395917
+      }
+    ],
+    "O2 Each reading view shows the right layers; the choice survives restarting the app.": [
+      {
+        "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795542395947
+      }
+    ]
+  }
+}

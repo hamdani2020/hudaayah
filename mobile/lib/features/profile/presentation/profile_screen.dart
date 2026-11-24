@@ -9,6 +9,8 @@ import '../../../core/widgets/stat_card.dart';
 import '../../authentication/application/auth_controller.dart';
 import '../../progress/data/progress_models.dart';
 import '../../progress/data/progress_repository.dart';
+import '../../quran_reader/application/reader_settings.dart';
+import '../../quran_reader/presentation/widgets/reader_display_sheet.dart';
 import '../application/reminder_controller.dart';
 import '../data/reciter_repository.dart';
 import 'reciter_picker_sheet.dart';
@@ -46,6 +48,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ?.where((r) => r.id == reciterId)
         .firstOrNull
         ?.name;
+    final readerMode = ref.watch(readerDisplayModeProvider).valueOrNull;
     final streak = summary?.streak ?? 0;
     final xp = summary?.totalXp ?? 0;
     final completedLessons =
@@ -109,6 +112,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           icon: Icons.translate,
                           title: 'Translation',
                           subtitle: 'Saheeh International',
+                        ),
+                        SettingsTile(
+                          icon: Icons.chrome_reader_mode_outlined,
+                          title: 'Reading view',
+                          subtitle: readerMode == null
+                              ? null
+                              : readerDisplayModeLabel(readerMode),
+                          onTap: () => showReaderDisplaySheet(context),
                         ),
                         SettingsTile(
                           icon: Icons.record_voice_over,
