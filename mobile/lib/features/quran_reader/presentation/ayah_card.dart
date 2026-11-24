@@ -20,11 +20,15 @@ class AyahCard extends ConsumerWidget {
     required this.ayah,
     this.fontScale = 1.0,
     this.showTranslation = true,
+    this.noWordHighlightNote = false,
   });
 
   final Ayah ayah;
   final double fontScale;
   final bool showTranslation;
+
+  /// The chosen reciter has no word timings: while this ayah plays, say so.
+  final bool noWordHighlightNote;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,6 +44,12 @@ class AyahCard extends ConsumerWidget {
     final isPlayingThis = isThis && isSingle && audio.playing;
     // Stays outlined while paused, so the learner can see where play-all stopped.
     final isRecitedInPlayAll = isThis && audio.isPlayingAll;
+    // Only the ayah being recited highlights a word.
+    final currentWord = isThis ? audio.currentWordPosition : null;
+    final arabicStyle = AppTextStyles.arabicAyahLg.copyWith(
+      fontSize: AppTextStyles.arabicAyahLg.fontSize! * fontScale,
+    );
+    final wordSpans = _wordSpans(ayah, currentWord);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -94,11 +104,10 @@ class AyahCard extends ConsumerWidget {
                     textDirection: TextDirection.rtl,
                     child: Text.rich(
                       TextSpan(
-                        style: AppTextStyles.arabicAyahLg.copyWith(
-                          fontSize: AppTextStyles.arabicAyahLg.fontSize! * fontScale,
-                        ),
+                        style: arabicStyle,
                         children: [
-                          TextSpan(text: '${ayah.arabic!} '),
+                          ...(wordSpans ?? [TextSpan(text: ayah.arabic!)]),
+                          const TextSpan(text: ' '),
                           TextSpan(
                             text: _endOfAyahMarker(ayah.verseKey),
                             style: const TextStyle(color: AppTheme.secondary),
@@ -116,8 +125,23 @@ class AyahCard extends ConsumerWidget {
                     child: Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: [for (final w in ayah.words) _WordChip(word: w)],
+                      children: [
+                        for (final w in ayah.words)
+                          _WordChip(
+                            word: w,
+                            highlighted: currentWord != null &&
+                                w.position == currentWord,
+                          ),
+                      ],
                     ),
+                  ),
+                ],
+                if (noWordHighlightNote && isThis && audio.playing) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    "Word highlighting isn't available for this reciter.",
+                    style: theme.textTheme.labelSmall
+                        ?.copyWith(color: AppTheme.onSurfaceVariant),
                   ),
                 ],
                 // Layer 3 — translation, clearly labeled and visually secondary.
@@ -182,6 +206,33 @@ class AyahCard extends ConsumerWidget {
     );
   }
 
+  /// One span per QF word, separated by single spaces, with the recited word
+  /// highlighted. Returns null (render the verse text as one piece, unchanged)
+  /// unless every word has a position and text and the words joined by spaces
+  /// reproduce the verse text exactly, so splitting can never alter the Quran
+  /// text. Words with no segment never match [currentWord], so never highlight.
+  static List<InlineSpan>? _wordSpans(Ayah ayah, int? currentWord) {
+    final words = ayah.words;
+    final text = ayah.arabic;
+    if (text == null || words.isEmpty) return null;
+    if (words.any((w) => w.position == null || w.arabic == null)) return null;
+    if (words.map((w) => w.arabic!).join(' ') != text) return null;
+    return [
+      for (var i = 0; i < words.length; i++) ...[
+        if (i > 0) const TextSpan(text: ' '),
+        TextSpan(
+          text: words[i].arabic,
+          style: currentWord != null && words[i].position == currentWord
+              ? const TextStyle(
+                  color: AppTheme.primary,
+                  backgroundColor: AppTheme.secondaryFixed,
+                )
+              : null,
+        ),
+      ],
+    ];
+  }
+
   /// Arabic-Indic numeral between ornate ayah-end brackets, derived from the
   /// verse key's ayah number (not Quran text — a decorative verse marker).
   String _endOfAyahMarker(String verseKey) {
@@ -197,8 +248,9 @@ class AyahCard extends ConsumerWidget {
 }
 
 class _WordChip extends StatelessWidget {
-  const _WordChip({required this.word});
+  const _WordChip({required this.word, this.highlighted = false});
   final WordPiece word;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -206,7 +258,9 @@ class _WordChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLow,
+        color: highlighted
+            ? AppTheme.secondaryFixed
+            : AppTheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppTheme.radiusLg),
       ),
       child: Column(

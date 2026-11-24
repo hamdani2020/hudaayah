@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
 import '../../quran_reader/application/audio_controller.dart';
+import '../../quran_reader/data/lesson_audio.dart';
 import '../../quran_reader/data/lesson_models.dart';
+import '../../quran_reader/presentation/widgets/reciter_fallback_notice.dart';
 import '../data/exercise_models.dart';
 
 /// Play the ayah audio, recite from memory, then self-mark. Lenient and
@@ -14,12 +16,16 @@ class ListeningRecallWidget extends ConsumerWidget {
     super.key,
     required this.exercise,
     required this.ayahs,
+    this.lessonAudio,
     required this.enabled,
     required this.onSubmit,
   });
 
   final Exercise exercise;
   final List<Ayah> ayahs;
+
+  /// The lesson's audio block: it carries the learner's chosen reciter.
+  final LessonAudio? lessonAudio;
   final bool enabled;
   final void Function(Map<String, dynamic> submitted) onSubmit;
 
@@ -30,6 +36,8 @@ class ListeningRecallWidget extends ConsumerWidget {
     final audio = ref.watch(audioControllerProvider);
 
     final ayah = _findAyah(verseKey);
+    final hasAudio = ayah?.audioUrl != null ||
+        (verseKey != null && lessonAudio?.verse(verseKey) != null);
     final isThis = audio.verseKey == verseKey;
 
     return Column(
@@ -37,7 +45,8 @@ class ListeningRecallWidget extends ConsumerWidget {
       children: [
         Text(exercise.prompt, style: theme.textTheme.headlineSmall),
         const SizedBox(height: 16),
-        if (ayah?.audioUrl != null)
+        ReciterFallbackNotice(audio: lessonAudio),
+        if (hasAudio)
           Center(
             child: Container(
               width: 72,
@@ -52,9 +61,13 @@ class ListeningRecallWidget extends ConsumerWidget {
                 icon: Icon(
                     isThis && audio.playing ? Icons.pause : Icons.play_arrow),
                 onPressed: enabled
-                    ? () => ref
-                        .read(audioControllerProvider.notifier)
-                        .playAyah(verseKey!, ayah!.audioUrl!)
+                    ? () async {
+                        final player =
+                            ref.read(audioControllerProvider.notifier);
+                        // Use the chosen reciter's clips, not the reader's.
+                        await player.loadLesson(lessonAudio);
+                        await player.playAyah(verseKey!, ayah?.audioUrl);
+                      }
                     : null,
               ),
             ),

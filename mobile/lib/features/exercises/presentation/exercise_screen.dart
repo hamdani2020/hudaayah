@@ -218,6 +218,7 @@ class _ExerciseBody extends StatelessWidget {
         return ListeningRecallWidget(
             exercise: exercise,
             ayahs: lesson.ayahs,
+            lessonAudio: lesson.audio,
             enabled: enabled,
             onSubmit: onSubmit);
       case ExerciseType.unknown:

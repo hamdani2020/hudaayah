@@ -15,8 +15,8 @@
 - [x] N9 `flutter analyze`, update the widget test for new routes, release build check. (R1–R4)
 
 ## Owner checks (on a phone)
-- [~] O1 Back from reader / practice / completion / each tab behaves as in R1.
-- [~] O2 Bell opens the reminder sheet; changing it there updates Profile.
-- [~] O3 Logo looks sharp in the top bar.
-- [~] O4 Privacy / Terms / Delete account open inside the app, signed in and signed out;
+- [x] O1 Back from reader / practice / completion / each tab behaves as in R1.
+- [x] O2 Bell opens the reminder sheet; changing it there updates Profile.
+- [x] O3 Logo looks sharp in the top bar.
+- [x] O4 Privacy / Terms / Delete account open inside the app, signed in and signed out;
       the Quran Foundation link opens the browser; offline shows Try again.

@@ -10,6 +10,8 @@ import '../../authentication/application/auth_controller.dart';
 import '../../progress/data/progress_models.dart';
 import '../../progress/data/progress_repository.dart';
 import '../application/reminder_controller.dart';
+import '../data/reciter_repository.dart';
+import 'reciter_picker_sheet.dart';
 import 'reminder_actions.dart';
 import 'widgets/history_tile.dart';
 import 'widgets/settings_tile.dart';
@@ -36,6 +38,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final summary = ref.watch(progressSummaryProvider).valueOrNull;
     final reminder = ref.watch(reminderControllerProvider).valueOrNull;
 
+    final reciterId =
+        ref.watch(selectedReciterProvider).valueOrNull ?? defaultReciterId;
+    final reciterName = ref
+        .watch(recitersProvider)
+        .valueOrNull
+        ?.where((r) => r.id == reciterId)
+        .firstOrNull
+        ?.name;
     final streak = summary?.streak ?? 0;
     final xp = summary?.totalXp ?? 0;
     final completedLessons =
@@ -100,10 +110,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           title: 'Translation',
                           subtitle: 'Saheeh International',
                         ),
-                        const SettingsTile(
+                        SettingsTile(
                           icon: Icons.record_voice_over,
                           title: 'Reciter',
-                          subtitle: 'Mishary Rashid Alafasy',
+                          subtitle: reciterName,
+                          onTap: () => showReciterPicker(context),
                         ),
                         SettingsTile(
                           icon: Icons.notifications,
