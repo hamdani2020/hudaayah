@@ -11,5 +11,5 @@
 - [x] D7 `flutter analyze`, backend tests, release build. (R1, R2)
 
 ## Owner checks
-- [~] O1 Al-Fatihah and Al-Baqarah 1–5: one marker per ayah, no marker chip.
-- [~] O2 Each reading view shows the right layers; the choice survives restarting the app.
+- [x] O1 Al-Fatihah and Al-Baqarah 1–5: one marker per ayah, no marker chip.
+- [x] O2 Each reading view shows the right layers; the choice survives restarting the app.

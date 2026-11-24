@@ -125,6 +125,11 @@
         "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
         "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
         "timestamp": 1795542395917
+      },
+      {
+        "executionId": "a3ea9f79-d089-4bc1-b685-69646d384b4d",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795556406875
       }
     ],
     "O2 Each reading view shows the right layers; the choice survives restarting the app.": [
@@ -132,6 +137,11 @@
         "executionId": "7c43c188-6c41-4881-8d92-74e16bb38f5f",
         "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
         "timestamp": 1795542395947
+      },
+      {
+        "executionId": "a3ea9f79-d089-4bc1-b685-69646d384b4d",
+        "chatSessionId": "sess_aa1a327e-41aa-436f-957c-44d6dd1aa59f",
+        "timestamp": 1795556407258
       }
     ]
   }
