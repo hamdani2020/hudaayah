@@ -12,6 +12,15 @@ class LessonProgress {
   final String state;
   final DateTime? completedAt;
 
+  /// Published exercises in the lesson (0 when the server did not send it).
+  final int exercisesTotal;
+
+  /// Distinct exercises answered in the current attempt.
+  final int exercisesAnswered;
+
+  /// Title of the lesson before this one; used in the locked message.
+  final String? previousTitle;
+
   const LessonProgress({
     required this.lessonId,
     required this.title,
@@ -24,15 +33,18 @@ class LessonProgress {
     required this.surahMeaning,
     required this.state,
     this.completedAt,
+    this.exercisesTotal = 0,
+    this.exercisesAnswered = 0,
+    this.previousTitle,
   });
 
   factory LessonProgress.fromJson(Map<String, dynamic> j) => LessonProgress(
-        lessonId: j['lesson_id'] as int,
+        lessonId: (j['lesson_id'] as num?)?.toInt() ?? 0,
         title: j['title'] as String? ?? '',
-        surah: j['surah'] as int? ?? 0,
-        ayahStart: j['ayah_start'] as int? ?? 0,
-        ayahEnd: j['ayah_end'] as int? ?? 0,
-        order: j['order'] as int? ?? 0,
+        surah: (j['surah'] as num?)?.toInt() ?? 0,
+        ayahStart: (j['ayah_start'] as num?)?.toInt() ?? 0,
+        ayahEnd: (j['ayah_end'] as num?)?.toInt() ?? 0,
+        order: (j['order'] as num?)?.toInt() ?? 0,
         surahNameEn: j['surah_name_en'] as String? ?? '',
         surahNameAr: j['surah_name_ar'] as String? ?? '',
         surahMeaning: j['surah_meaning'] as String? ?? '',
@@ -40,9 +52,17 @@ class LessonProgress {
         completedAt: j['completed_at'] != null
             ? DateTime.tryParse(j['completed_at'] as String)
             : null,
+        exercisesTotal: (j['exercises_total'] as num?)?.toInt() ?? 0,
+        exercisesAnswered: (j['exercises_answered'] as num?)?.toInt() ?? 0,
+        previousTitle: j['previous_title'] as String?,
       );
 
   bool get isCompleted => state == 'completed';
+  bool get isInProgress => state == 'in_progress';
+  bool get isLocked => state == 'locked';
+
+  /// Next lesson to start: unlocked but not begun.
+  bool get isUpNext => state == 'available';
 
   /// Display name, preferring the seeded English surah name.
   String get displayName =>
@@ -113,4 +133,42 @@ class ProgressSummary {
             .map((d) => WeekDay.fromJson((d as Map).cast<String, dynamic>()))
             .toList(),
       );
+}
+
+/// Streak change returned by the completion response (`streak` block).
+/// Server-owned: the app only renders it.
+class StreakChange {
+  final int current;
+  final int previous;
+  final bool increased;
+
+  const StreakChange({
+    required this.current,
+    required this.previous,
+    required this.increased,
+  });
+
+  factory StreakChange.fromJson(Map<String, dynamic> j) => StreakChange(
+        current: (j['current'] as num?)?.toInt() ?? 0,
+        previous: (j['previous'] as num?)?.toInt() ?? 0,
+        increased: j['increased'] as bool? ?? false,
+      );
+
+  /// Parses the `streak` block of a completion summary; null when absent
+  /// (older backend) so no celebration is shown.
+  static StreakChange? fromSummary(Map<String, dynamic>? summary) {
+    final raw = summary?['streak'];
+    if (raw is! Map) return null;
+    return StreakChange.fromJson(raw.cast<String, dynamic>());
+  }
+
+  /// Week days from a completion summary (`week`), Monday first.
+  static List<WeekDay> weekFromSummary(Map<String, dynamic>? summary) {
+    final raw = summary?['week'];
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map((d) => WeekDay.fromJson(d.cast<String, dynamic>()))
+        .toList();
+  }
 }

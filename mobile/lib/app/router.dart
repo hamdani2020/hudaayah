@@ -10,10 +10,13 @@ import '../features/onboarding/onboarding_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 import '../features/progress/presentation/home_screen.dart';
 import '../features/progress/presentation/lesson_completion_screen.dart';
+import '../features/progress/presentation/streak_celebration_screen.dart';
+import '../features/progress/presentation/widgets/lesson_locked_notice.dart';
 import '../features/quran_reader/data/lesson_repository.dart';
 import '../features/quran_reader/presentation/reader_screen.dart';
 import '../features/quran_reader/presentation/surah_selection_screen.dart';
 import '../features/review/presentation/review_session_screen.dart';
+import '../features/whats_new/presentation/changelog_screen.dart';
 import 'home_shell.dart';
 import 'splash_screen.dart';
 
@@ -38,8 +41,12 @@ class _PracticeLoader extends ConsumerWidget {
     return lessonAsync.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, _) =>
-          const Scaffold(body: Center(child: Text('Could not load practice.'))),
+      error: (e, _) => Scaffold(
+        appBar: AppBar(),
+        body: isLessonLocked(e)
+            ? const LessonLockedNotice()
+            : const Center(child: Text('Could not load practice.')),
+      ),
       data: (lesson) => ExerciseScreen(lesson: lesson),
     );
   }
@@ -98,6 +105,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) =>
             LegalPageScreen(page: state.pathParameters['page'] ?? ''),
       ),
+      // Release history (Profile → What's new, or from the update sheet).
+      GoRoute(
+        path: '/whats-new',
+        name: 'whatsNew',
+        builder: (context, state) => const ChangelogScreen(),
+      ),
       // Full-screen lesson practice (no bottom nav while practising).
       GoRoute(
         path: '/lesson/:id/practice',
@@ -126,6 +139,18 @@ final routerProvider = Provider<GoRouter>((ref) {
               ? state.extra as Map<String, dynamic>
               : null;
           return LessonCompletionScreen(lessonId: id, summary: summary);
+        },
+      ),
+      // Streak celebration, shown only when the streak increased; summary via `extra`.
+      GoRoute(
+        path: '/lesson/:id/streak',
+        name: 'lessonStreak',
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '1') ?? 1;
+          final summary = state.extra is Map<String, dynamic>
+              ? state.extra as Map<String, dynamic>
+              : null;
+          return StreakCelebrationScreen(lessonId: id, summary: summary);
         },
       ),
       // Persistent bottom-nav shell for the four main destinations.

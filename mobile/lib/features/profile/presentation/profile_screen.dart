@@ -15,8 +15,10 @@ import '../application/reminder_controller.dart';
 import '../data/reciter_repository.dart';
 import 'reciter_picker_sheet.dart';
 import 'reminder_actions.dart';
+import '../../progress/presentation/widgets/day_slot.dart';
 import 'widgets/history_tile.dart';
 import 'widgets/settings_tile.dart';
+import '../../whats_new/data/changelog.dart';
 
 /// Learning History & Profile (design-mapping §2, screen 08). Identity header,
 /// a 3-up metrics row, a simplified weekly rhythm, recent reflections, a
@@ -39,6 +41,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = ref.watch(authControllerProvider).valueOrNull?.user;
     final summary = ref.watch(progressSummaryProvider).valueOrNull;
     final reminder = ref.watch(reminderControllerProvider).valueOrNull;
+    final appVersion = ref.watch(appVersionProvider).valueOrNull;
 
     final reciterId =
         ref.watch(selectedReciterProvider).valueOrNull ?? defaultReciterId;
@@ -160,6 +163,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           title: 'Account deletion info',
                           onTap: () => context.push('/legal/delete-account'),
                         ),
+                        SettingsTile(
+                          icon: Icons.new_releases_outlined,
+                          title: "What's new",
+                          subtitle: appVersion == null
+                              ? null
+                              : 'Version ${appVersion.version}',
+                          onTap: () => context.push('/whats-new'),
+                        ),
                       ],
                     ),
                   ),
@@ -215,6 +226,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             color: AppTheme.onSurfaceVariant,
                           ),
                         ),
+                        if (appVersion != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            'Version ${appVersion.version} (${appVersion.buildNumber})',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppTheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -474,7 +495,7 @@ class _WeeklyRhythm extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               for (var i = 0; i < 7; i++)
-                _DaySlot(
+                DaySlot(
                   label: _days[i],
                   active: i < week.length && week[i].active,
                   isToday: i < week.length && week[i].isToday,
@@ -483,54 +504,6 @@ class _WeeklyRhythm extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _DaySlot extends StatelessWidget {
-  const _DaySlot({
-    required this.label,
-    required this.active,
-    required this.isToday,
-  });
-
-  final String label;
-  final bool active;
-  final bool isToday;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: isToday ? AppTheme.primary : AppTheme.onSurfaceVariant,
-            fontWeight: isToday ? FontWeight.w700 : null,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          width: 36,
-          height: 36,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: active
-                ? AppTheme.primaryContainer
-                : AppTheme.surfaceContainerHigh,
-            border: isToday
-                ? Border.all(color: AppTheme.secondaryContainer, width: 2)
-                : null,
-          ),
-          child: Icon(
-            Icons.star,
-            size: 16,
-            color: active ? AppTheme.tertiaryFixedDim : AppTheme.outlineVariant,
-          ),
-        ),
-      ],
     );
   }
 }

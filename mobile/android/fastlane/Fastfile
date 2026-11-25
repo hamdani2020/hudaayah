@@ -114,7 +114,11 @@ platform :android do
   desc "Preflight checks and the next build number, without building or uploading"
   lane :check do
     preflight!
-    UI.success("Version #{pubspec_version_name}, next build number #{next_build_number}.")
+    version_name = pubspec_version_name
+    notes = play_release_notes(changelog_entry!(version_name))
+    UI.message("Play release notes (#{notes.length}/#{MAX_CHANGELOG} characters):\n#{notes}")
+    UI.user_error!("Release notes are too long for Play.") if notes.length > MAX_CHANGELOG
+    UI.success("Version #{version_name}, next build number #{next_build_number}.")
   end
 
   # ----------------------------------------------------------------------------------
@@ -130,7 +134,7 @@ platform :android do
     build_number = next_build_number
     UI.message("Releasing #{version_name} (#{build_number}) to '#{track}'#{draft ? ' as draft' : ''}")
 
-    temp_changelog = prepare_changelog!(build_number)
+    temp_changelog = prepare_changelog!(build_number, version_name)
     begin
       sh(
         "cd #{MOBILE_DIR.shellescape} && flutter build appbundle --release " \
@@ -228,23 +232,53 @@ def preflight!
   pubspec_version_name
 end
 
-# Uses changelogs/<N>.txt, or a temporary copy of default.txt. Returns the temp file
-# path to delete afterwards (nil if a real changelog for N exists).
-def prepare_changelog!(build_number)
+# The app's changelog entry for this version (mobile/assets/changelog.json), which is
+# the single source of release notes. Fails if the version has no entry.
+def changelog_entry!(version_name)
+  path = File.join(MOBILE_DIR, "assets", "changelog.json")
+  UI.user_error!("Missing #{path}") unless File.exist?(path)
+  entries = JSON.parse(File.read(path))["entries"] || []
+  entry = entries.find { |e| e["version"] == version_name }
+  unless entry && (Array(entry["new"]) + Array(entry["fixed"])).any?
+    UI.user_error!("No release notes for #{version_name}: add an entry to mobile/assets/changelog.json.")
+  end
+  entry
+end
+
+# Play "What's new" text from the changelog entry. Uses the full list when it fits in
+# Play's limit, else the new items plus a short line about the fixes.
+def play_release_notes(entry)
+  new_items = Array(entry["new"])
+  fixed = Array(entry["fixed"])
+  header = new_items.any? ? "New in Hudaayah #{entry['version']}:" : "Hudaayah #{entry['version']}:"
+  lines = [header] + new_items.map { |i| "• #{i}" }
+  full = lines.dup
+  full += [(new_items.any? ? "Fixed:" : nil)].compact + fixed.map { |i| "• #{i}" } if fixed.any?
+  text = full.join("\n")
+  return text if text.length <= MAX_CHANGELOG
+
+  compact = lines + ["• And #{fixed.size} fix#{fixed.size == 1 ? '' : 'es'}. See What's new in the app."]
+  compact.join("\n")
+end
+
+# Writes changelogs/<N>.txt for this upload. A hand-written changelogs/<N>.txt, if
+# present, wins (for a one-off Play text). Returns the temp file to delete afterwards
+# (nil when a hand-written file was used).
+def prepare_changelog!(build_number, version_name)
   target = File.join(CHANGELOG_DIR, "#{build_number}.txt")
   temp = nil
   unless File.exist?(target)
-    default = File.join(CHANGELOG_DIR, "default.txt")
-    UI.user_error!("Missing release notes: add changelogs/#{build_number}.txt or default.txt") unless File.exist?(default)
-    FileUtils.cp(default, target)
+    FileUtils.mkdir_p(CHANGELOG_DIR)
+    File.write(target, play_release_notes(changelog_entry!(version_name)) + "\n")
     temp = target
   end
   length = File.read(target).strip.length
   if length > MAX_CHANGELOG
     File.delete(temp) if temp
-    UI.user_error!("Release notes for #{build_number} are #{length} characters (max #{MAX_CHANGELOG}).")
+    UI.user_error!("Release notes for #{build_number} are #{length} characters (max #{MAX_CHANGELOG}). " \
+                   "Shorten the items in mobile/assets/changelog.json.")
   end
-  UI.message("Release notes: #{File.basename(temp ? File.join(CHANGELOG_DIR, 'default.txt') : target)}")
+  UI.message(temp ? "Release notes: from changelog.json (#{version_name})" : "Release notes: changelogs/#{build_number}.txt")
   temp
 end
 

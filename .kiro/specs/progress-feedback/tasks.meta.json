@@ -101,6 +101,11 @@
         "executionId": "67f70edb-9e60-472f-83e9-28ff5208a630",
         "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
         "timestamp": 1795564929375
+      },
+      {
+        "executionId": "67f70edb-9e60-472f-83e9-28ff5208a630",
+        "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
+        "timestamp": 1795564996189
       }
     ],
     "P7 `StreakCelebrationScreen` + `/lesson/:id/streak` route; shown only when": [
@@ -108,6 +113,16 @@
         "executionId": "1ccb780f-784c-4311-89f7-22bda99e84ff",
         "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
         "timestamp": 1795556454127
+      },
+      {
+        "executionId": "67f70edb-9e60-472f-83e9-28ff5208a630",
+        "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
+        "timestamp": 1795564999655
+      },
+      {
+        "executionId": "67f70edb-9e60-472f-83e9-28ff5208a630",
+        "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
+        "timestamp": 1795565078826
       }
     ],
     "P8 Models: lesson state, counts, previous title, streak change. (R2, R3)": [
@@ -115,6 +130,16 @@
         "executionId": "1ccb780f-784c-4311-89f7-22bda99e84ff",
         "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
         "timestamp": 1795556454154
+      },
+      {
+        "executionId": "67f70edb-9e60-472f-83e9-28ff5208a630",
+        "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
+        "timestamp": 1795565082463
+      },
+      {
+        "executionId": "67f70edb-9e60-472f-83e9-28ff5208a630",
+        "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
+        "timestamp": 1795565213181
       }
     ],
     "P9 Journey tiles for completed / in progress / up next / locked; Home focus card rule. (R3)": [
@@ -122,6 +147,16 @@
         "executionId": "1ccb780f-784c-4311-89f7-22bda99e84ff",
         "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
         "timestamp": 1795556454187
+      },
+      {
+        "executionId": "67f70edb-9e60-472f-83e9-28ff5208a630",
+        "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
+        "timestamp": 1795565216125
+      },
+      {
+        "executionId": "67f70edb-9e60-472f-83e9-28ff5208a630",
+        "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
+        "timestamp": 1795565313447
       }
     ],
     "P10 Read tab shows lock state; `lesson_locked` message in reader and practice. (R3, R4)": [
@@ -129,6 +164,16 @@
         "executionId": "1ccb780f-784c-4311-89f7-22bda99e84ff",
         "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
         "timestamp": 1795556454217
+      },
+      {
+        "executionId": "67f70edb-9e60-472f-83e9-28ff5208a630",
+        "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
+        "timestamp": 1795565316843
+      },
+      {
+        "executionId": "67f70edb-9e60-472f-83e9-28ff5208a630",
+        "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
+        "timestamp": 1795565461462
       }
     ],
     "P11 `flutter analyze`, tests, release build. (R1–R4)": [
@@ -136,6 +181,21 @@
         "executionId": "1ccb780f-784c-4311-89f7-22bda99e84ff",
         "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
         "timestamp": 1795556454248
+      },
+      {
+        "executionId": "67f70edb-9e60-472f-83e9-28ff5208a630",
+        "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
+        "timestamp": 1795565464903
+      },
+      {
+        "executionId": "95741df3-7d61-4889-a360-d0830545b93e",
+        "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
+        "timestamp": 1795565928802
+      },
+      {
+        "executionId": "95741df3-7d61-4889-a360-d0830545b93e",
+        "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
+        "timestamp": 1795566107712
       }
     ],
     "O1 Review the celebration and lock wording (adab).": [
@@ -143,6 +203,11 @@
         "executionId": "1ccb780f-784c-4311-89f7-22bda99e84ff",
         "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
         "timestamp": 1795556454273
+      },
+      {
+        "executionId": "17706166-33aa-4617-a697-40d41b63f605",
+        "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
+        "timestamp": 1795566681641
       }
     ],
     "O2 With a fresh account: only lesson 1 is open; completing it shows the": [
@@ -150,6 +215,11 @@
         "executionId": "1ccb780f-784c-4311-89f7-22bda99e84ff",
         "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
         "timestamp": 1795556454300
+      },
+      {
+        "executionId": "17706166-33aa-4617-a697-40d41b63f605",
+        "chatSessionId": "sess_4645d586-5e9c-4698-a492-e5777ae1cd1b",
+        "timestamp": 1795566682076
       }
     ]
   }

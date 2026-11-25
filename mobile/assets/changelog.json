@@ -1,0 +1,51 @@
+{
+  "_comment": "Single source of release notes. Newest first. The app shows these in 'What's new'; fastlane turns the entry matching pubspec.yaml's version into the Play 'What's new' text (max 500 characters). Every release needs an entry.",
+  "entries": [
+    {
+      "version": "1.1.0",
+      "new": [
+        "Choose your reciter in Profile",
+        "Follow each word as it is recited",
+        "The reader scrolls with the recitation",
+        "Reading view: Arabic only, with translation, or full",
+        "Lessons unlock in order, with a clear learning journey",
+        "Streak celebration for your first lesson of the day",
+        "What's new: see the changes in each update"
+      ],
+      "fixed": [
+        "Back button returns to the previous screen",
+        "Bell opens your daily reminder",
+        "Privacy and Terms open inside the app",
+        "One ayah marker per ayah",
+        "Progress updates right after a lesson"
+      ]
+    },
+    {
+      "version": "1.0.2",
+      "new": [],
+      "fixed": [
+        "You stay signed in: reopening the app takes you to Home",
+        "Weak or no connection no longer signs you out",
+        "The Read tab shows clearly when it is selected"
+      ]
+    },
+    {
+      "version": "1.0.1",
+      "new": [],
+      "fixed": [
+        "Daily reminders now work on phones"
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "new": [
+        "Learn Surah Al-Fatihah and the opening of Al-Baqarah, ayah by ayah",
+        "Arabic with translation and word-by-word meaning",
+        "Listen to each ayah or the whole lesson",
+        "Short exercises and gentle word reviews",
+        "Daily reminder and weekly progress"
+      ],
+      "fixed": []
+    }
+  ]
+}

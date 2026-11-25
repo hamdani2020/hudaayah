@@ -5,6 +5,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/errors/api_exception.dart';
+import '../../progress/presentation/widgets/lesson_locked_notice.dart';
 import '../application/audio_controller.dart';
 import '../application/reader_follow.dart';
 import '../application/reader_settings.dart';
@@ -135,6 +136,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       body: lessonAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) {
+          if (isLessonLocked(err)) return const LessonLockedNotice();
           final msg = err is ApiException ? err.message : 'Could not load the lesson.';
           return _ErrorRetry(
             message: msg,

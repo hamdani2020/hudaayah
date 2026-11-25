@@ -8,6 +8,9 @@ import '../../../core/widgets/chips.dart';
 import '../../../core/widgets/feedback_drawer.dart';
 import '../../../core/widgets/segmented_progress_bar.dart';
 import '../../quran_reader/data/lesson_models.dart';
+import '../../progress/data/progress_models.dart';
+import '../../progress/presentation/streak_celebration_screen.dart';
+import '../../progress/presentation/widgets/lesson_locked_notice.dart';
 import '../application/exercise_session_controller.dart';
 import '../data/exercise_models.dart';
 import 'listening_recall_widget.dart';
@@ -62,16 +65,26 @@ class ExerciseScreen extends ConsumerWidget {
       body: SafeArea(
         child: sessionAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(
-            child: Text(
-                err is ApiException ? err.message : 'Could not start practice.'),
-          ),
+          error: (err, _) => isLessonLocked(err)
+              ? const LessonLockedNotice()
+              : Center(
+                  child: Text(err is ApiException
+                      ? err.message
+                      : 'Could not start practice.'),
+                ),
           data: (session) {
             // On completion, hand off to the celebration screen with the summary.
             if (session.isComplete) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (context.mounted) {
-                  context.pushReplacement('/lesson/${lesson.id}/complete',
+                  final streak = StreakChange.fromSummary(session.summary);
+                  final attemptId = session.attemptId;
+                  final celebrate = streak != null &&
+                      streak.increased &&
+                      attemptId != null &&
+                      markStreakCelebrationShown(attemptId);
+                  context.pushReplacement(
+                      '/lesson/${lesson.id}/${celebrate ? 'streak' : 'complete'}',
                       extra: session.summary);
                 }
               });
