@@ -30,6 +30,12 @@ class UpstreamError(AppError):
     http_status = 502
 
 
+class LessonLocked(AppError):
+    code = "lesson_locked"
+    message = "This lesson opens after you complete the one before it."
+    http_status = 403
+
+
 def new_request_id() -> str:
     return uuid.uuid4().hex
 

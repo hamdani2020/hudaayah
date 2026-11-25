@@ -3,11 +3,16 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.accounts.authentication import BearerTokenAuthentication
-from apps.common.errors import AppError
+from apps.common.errors import AppError, LessonLocked
 
 from .models import Lesson
 from .serializers import LessonListItemSerializer, LessonSerializer
-from .services import build_lesson_audio, build_lesson_content, resolve_reciter_id
+from .services import (
+    build_lesson_audio,
+    build_lesson_content,
+    is_lesson_unlocked,
+    resolve_reciter_id,
+)
 
 
 class LessonListView(ListAPIView):
@@ -48,6 +53,8 @@ class LessonDetailView(RetrieveAPIView):
             lesson = self.get_queryset().get(pk=self.kwargs["pk"])
         except Lesson.DoesNotExist:
             raise LessonNotAvailable()
+        if not is_lesson_unlocked(self.request.user, lesson):
+            raise LessonLocked()
         return lesson
 
     def retrieve(self, request, *args, **kwargs):

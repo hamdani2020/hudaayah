@@ -102,9 +102,10 @@ def test_unusable_verse_in_lesson_range_falls_to_per_ayah():
 
 def test_reciter_param_beats_preference():
     chapters = {(6, 1): CH1, (7, 1): CH1}
-    resp = _get(chapters, _lesson(), "?reciter=6", preferences={"reciter_id": 7})
+    lesson = _lesson()  # one lesson: a second one would be locked behind it
+    resp = _get(chapters, lesson, "?reciter=6", preferences={"reciter_id": 7})
     assert resp.json()["audio"]["reciter"]["id"] == 6
-    resp = _get(chapters, _lesson(), preferences={"reciter_id": 6})
+    resp = _get(chapters, lesson, preferences={"reciter_id": 6})
     assert resp.json()["audio"]["reciter"]["id"] == 6
     assert "Husary" in resp.json()["content"]["attribution"]
 

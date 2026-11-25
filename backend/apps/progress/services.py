@@ -63,13 +63,7 @@ def complete_attempt(*, attempt: LessonAttempt, idempotency_key: str) -> dict:
         "xp_earned": LESSON_COMPLETION_XP,
     }
 
-    attempt.status = AttemptStatus.COMPLETED
-    attempt.completed_at = timezone.now()
-    attempt.score_summary = summary
-    attempt.idempotency_key = idempotency_key
-    attempt.save(update_fields=[
-        "status", "completed_at", "score_summary", "idempotency_key"
-    ])
+    completed_at = timezone.now()
 
     # Upsert per-lesson progress (best result = highest correct count).
     progress, _ = UserProgress.objects.get_or_create(
@@ -79,20 +73,44 @@ def complete_attempt(*, attempt: LessonAttempt, idempotency_key: str) -> dict:
     if correct >= best.get("correct", -1):
         progress.best_result = summary
     progress.state = ProgressState.COMPLETED
-    progress.completed_at = attempt.completed_at
+    progress.completed_at = completed_at
     progress.save(update_fields=["best_result", "state", "completed_at", "last_activity"])
 
-    # Daily activity rollup (one row per user/day).
+    # Daily activity rollup (one row per user/day). Streak is measured before
+    # and after so the response can tell whether this completion extended it.
+    from apps.gamification.services import current_streak, total_xp, week_activity
+
     today = timezone.localdate()
+    previous_streak = current_streak(attempt.user, today=today)
     activity, _ = DailyActivity.objects.get_or_create(user=attempt.user, date=today)
     activity.xp_earned += LESSON_COMPLETION_XP
     activity.lessons_completed += 1
     activity.save(update_fields=["xp_earned", "lessons_completed"])
 
+    current = current_streak(attempt.user, today=today)
+    full_summary = {
+        **summary,
+        "streak": {
+            "current": current,
+            "previous": previous_streak,
+            "increased": current > previous_streak,
+        },
+        "week": week_activity(attempt.user, today=today),
+        "total_xp": total_xp(attempt.user),
+    }
+    # Persist so an idempotent replay returns identical values.
+    attempt.status = AttemptStatus.COMPLETED
+    attempt.completed_at = completed_at
+    attempt.score_summary = full_summary
+    attempt.idempotency_key = idempotency_key
+    attempt.save(update_fields=[
+        "status", "completed_at", "score_summary", "idempotency_key"
+    ])
+
     # Seed vocab review items for this lesson (idempotent per user+ref).
     _ensure_vocab_reviews(attempt)
 
-    return summary
+    return full_summary
 
 
 def _ensure_vocab_reviews(attempt: LessonAttempt) -> None:

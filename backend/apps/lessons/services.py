@@ -15,6 +15,97 @@ from apps.quran_content.client import DEFAULT_RECITER_ID, get_client
 from .models import Lesson
 
 
+def lesson_states(user) -> list[dict]:
+    """Per-lesson state for `user`, over published lessons ordered by (order, id).
+
+    Each entry: {lesson_id, state, exercises_total, exercises_answered, completed_at}
+    with state in completed | in_progress | available | locked.
+
+    Unlock rule: the first lesson is always available; a lesson opens when the
+    previous one is completed; any lesson the user already has progress on (a
+    UserProgress row beyond not_started, or an attempt) stays unlocked.
+    """
+    # Imported here: progress/exercises models import lessons.models.
+    from django.db.models import Count
+
+    from apps.exercises.models import Exercise
+    from apps.progress.models import (
+        AttemptStatus,
+        ExerciseAnswer,
+        LessonAttempt,
+        ProgressState,
+        UserProgress,
+    )
+
+    lessons = list(Lesson.objects.published().order_by("order", "id"))
+    if not lessons:
+        return []
+    ids = [lesson.id for lesson in lessons]
+
+    totals = dict(
+        Exercise.objects.published().filter(lesson_id__in=ids)
+        .values_list("lesson_id").annotate(n=Count("id"))
+    )
+    progress = {
+        p.lesson_id: p for p in UserProgress.objects.filter(user=user, lesson_id__in=ids)
+    }
+    # Answered exercises of the user's open attempt on each lesson (latest attempt).
+    answered: dict[int, int] = {}
+    attempted: set[int] = set()
+    open_attempts = LessonAttempt.objects.filter(
+        user=user, lesson_id__in=ids, status=AttemptStatus.IN_PROGRESS
+    ).order_by("id")
+    attempt_lesson = {a.id: a.lesson_id for a in open_attempts}
+    for lesson_id in attempt_lesson.values():
+        attempted.add(lesson_id)
+    if attempt_lesson:
+        rows = (
+            ExerciseAnswer.objects.filter(attempt_id__in=attempt_lesson)
+            .values_list("attempt_id", "exercise_id")
+            .distinct()
+        )
+        per_attempt: dict[int, int] = {}
+        for attempt_id, _exercise_id in rows:
+            per_attempt[attempt_id] = per_attempt.get(attempt_id, 0) + 1
+        for attempt_id, lesson_id in attempt_lesson.items():  # later attempt wins
+            answered[lesson_id] = per_attempt.get(attempt_id, 0)
+
+    out: list[dict] = []
+    previous_completed = True  # the first lesson has no predecessor
+    for lesson in lessons:
+        p = progress.get(lesson.id)
+        p_state = p.state if p else ProgressState.NOT_STARTED
+        total = totals.get(lesson.id, 0)
+        if p_state == ProgressState.COMPLETED:
+            state = "completed"
+        elif p_state == ProgressState.IN_PROGRESS or lesson.id in attempted:
+            state = "in_progress"
+        elif previous_completed:
+            state = "available"
+        else:
+            state = "locked"
+        out.append({
+            "lesson_id": lesson.id,
+            "state": state,
+            "exercises_total": total,
+            "exercises_answered": min(answered.get(lesson.id, 0), total),
+            "completed_at": p.completed_at if p and state == "completed" else None,
+        })
+        previous_completed = state == "completed"
+    return out
+
+
+def is_lesson_unlocked(user, lesson: Lesson) -> bool:
+    """True when `lesson` is open to `user` (anything but `locked`).
+
+    Unpublished lessons are not part of the path and report False.
+    """
+    for entry in lesson_states(user):
+        if entry["lesson_id"] == lesson.id:
+            return entry["state"] != "locked"
+    return False
+
+
 def published_surahs() -> list[int]:
     """Distinct surah numbers of published lessons, ascending."""
     return sorted(set(Lesson.objects.published().values_list("surah", flat=True)))
