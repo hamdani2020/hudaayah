@@ -42,7 +42,12 @@ class LessonCompletionScreen extends ConsumerWidget {
     final total = _asInt(summary?['total']);
     final xp = _asInt(summary?['xp_earned']);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go('/home');
+      },
+      child: Scaffold(
       body: SafeArea(
         child: Column(
           children: [
@@ -103,7 +108,10 @@ class LessonCompletionScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   SecondaryButton(
                     label: 'Review Lesson Notes',
-                    onPressed: () => context.go('/reader/$lessonId'),
+                    onPressed: () {
+                      context.go('/home');
+                      context.push('/reader/$lessonId');
+                    },
                   ),
                   const SizedBox(height: 24),
                   Text(
@@ -117,6 +125,7 @@ class LessonCompletionScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

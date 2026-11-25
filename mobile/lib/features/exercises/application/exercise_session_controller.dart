@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../progress/data/progress_repository.dart';
+import '../../quran_reader/data/lesson_repository.dart';
+import '../../review/data/review_repository.dart';
 import '../data/exercise_models.dart';
 import '../data/exercise_repository.dart';
 
@@ -66,6 +69,15 @@ class ExerciseSessionController
     );
   }
 
+  /// The server confirmed the completion: refresh everything that shows
+  /// progress so Home, Read, Profile and due reviews update without a manual
+  /// refresh.
+  void _invalidateProgressProviders() {
+    ref.invalidate(progressSummaryProvider);
+    ref.invalidate(lessonsListProvider);
+    ref.invalidate(dueReviewsProvider);
+  }
+
   Future<void> submit(Map<String, dynamic> submitted) async {
     final session = state.valueOrNull;
     if (session == null || session.current == null || session.attemptId == null) {
@@ -101,6 +113,7 @@ class ExerciseSessionController
         attemptId: session.attemptId!,
         idempotencyKey: 'attempt-${session.attemptId}',
       );
+      _invalidateProgressProviders();
       state = AsyncData(session.copyWith(summary: summary, clearResult: true));
     } catch (e) {
       state = AsyncData(session.copyWith(error: 'Could not finish the lesson.'));

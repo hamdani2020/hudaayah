@@ -4,12 +4,10 @@ import '../../../../app/theme.dart';
 
 /// The reader's audio strip (design-mapping §2 screen 06): a round
 /// `primary-container` play/pause button, the surah + reciter label, a 1.0x
-/// speed chip, a repeat toggle, and a static scrub track.
+/// speed chip, a repeat toggle, and a progress bar.
 ///
-/// Presentational only. [playing]/[looping] are driven by the real
-/// `AudioController` state; [onPlayPause]/[onToggleLoop] forward to it. The
-/// `AudioController` exposes no playback position, so the scrub track is a
-/// static affordance — no fabricated progress or timer.
+/// Presentational only. [playing]/[looping]/[progress] come from the real
+/// `AudioController` state; [onPlayPause]/[onToggleLoop] forward to it.
 class AudioStrip extends StatelessWidget {
   const AudioStrip({
     super.key,
@@ -18,6 +16,7 @@ class AudioStrip extends StatelessWidget {
     required this.playing,
     required this.loading,
     required this.looping,
+    this.progress = 0,
     required this.onPlayPause,
     required this.onToggleLoop,
   });
@@ -27,6 +26,9 @@ class AudioStrip extends StatelessWidget {
   final bool playing;
   final bool loading;
   final bool looping;
+
+  /// Fraction (0–1) of the lesson audio played.
+  final double progress;
 
   /// Null disables the main play button (e.g. no ayah has audio).
   final VoidCallback? onPlayPause;
@@ -91,12 +93,14 @@ class AudioStrip extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          // Static scrub track — no live position is available (honest).
-          Container(
-            height: 6,
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceVariant,
-              borderRadius: BorderRadius.circular(999),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              key: const Key('audio_progress'),
+              value: progress.clamp(0.0, 1.0),
+              minHeight: 6,
+              backgroundColor: AppTheme.surfaceVariant,
+              color: AppTheme.primaryContainer,
             ),
           ),
         ],

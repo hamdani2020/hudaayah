@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/whats_new/presentation/whats_new_widgets.dart';
 import 'theme.dart';
 
 /// Persistent bottom-navigation shell for the four main destinations
@@ -48,8 +49,21 @@ class HomeShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onHome = navigationShell.currentIndex == 0;
+    return PopScope(
+      // On Home, back leaves the app; on other tabs it returns to Home first.
+      canPop: onHome,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) navigationShell.goBranch(0);
+      },
+      child: _buildScaffold(),
+    );
+  }
+
+  Widget _buildScaffold() {
     return Scaffold(
-      body: navigationShell,
+      // Shows "What's new" once after an update.
+      body: WhatsNewGate(child: navigationShell),
       bottomNavigationBar: DecoratedBox(
         decoration: const BoxDecoration(
           border: Border(

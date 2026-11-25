@@ -3,11 +3,16 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.accounts.authentication import BearerTokenAuthentication
-from apps.common.errors import AppError
+from apps.common.errors import AppError, LessonLocked
 
 from .models import Lesson
 from .serializers import LessonListItemSerializer, LessonSerializer
-from .services import build_lesson_content
+from .services import (
+    build_lesson_audio,
+    build_lesson_content,
+    is_lesson_unlocked,
+    resolve_reciter_id,
+)
 
 
 class LessonListView(ListAPIView):
@@ -48,11 +53,17 @@ class LessonDetailView(RetrieveAPIView):
             lesson = self.get_queryset().get(pk=self.kwargs["pk"])
         except Lesson.DoesNotExist:
             raise LessonNotAvailable()
+        if not is_lesson_unlocked(self.request.user, lesson):
+            raise LessonLocked()
         return lesson
 
     def retrieve(self, request, *args, **kwargs):
         lesson = self.get_object()
         data = self.get_serializer(lesson).data
         # Assemble QF content live (adapter enforces ≤1wk cache).
-        data["content"] = build_lesson_content(lesson)
+        audio = build_lesson_audio(
+            lesson, resolve_reciter_id(request.query_params.get("reciter"), request.user)
+        )
+        data["content"] = build_lesson_content(lesson, audio)
+        data["audio"] = audio
         return Response(data)

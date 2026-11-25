@@ -6,6 +6,7 @@ import '../../../core/widgets/filter_chip_bar.dart';
 import '../../../core/widgets/hudaayah_top_bar.dart';
 import '../../../core/widgets/info_card.dart';
 import '../../../core/widgets/search_field.dart';
+import '../../progress/application/journey_presenter.dart';
 import '../../progress/data/progress_models.dart';
 import '../../progress/data/progress_repository.dart';
 import '../data/lesson_models.dart';
@@ -135,7 +136,7 @@ class _SurahSelectionScreenState extends ConsumerState<SurahSelectionScreen> {
             surahName: resumeEntry.displayName,
             subtitle: '${resumeEntry.surahMeaning} • '
                 '${resumeEntry.surahAyahCount} Ayahs',
-            onTap: () => context.go('/reader/${resumeEntry!.id}'),
+            onTap: () => context.push('/reader/${resumeEntry!.id}'),
           ),
           const SizedBox(height: 16),
         ],
@@ -153,7 +154,9 @@ class _SurahSelectionScreenState extends ConsumerState<SurahSelectionScreen> {
           Builder(builder: (_) {
             final p = progress[s.id];
             final completed = p?.isCompleted ?? false;
+            final locked = p != null ? journeyTileFor(p).lockedMessage : null;
             return SurahListTile(
+              lockedMessage: locked,
               number: s.surah,
               name: s.surahNameEn.isNotEmpty ? s.surahNameEn : s.title,
               meaning: s.surahMeaning,
@@ -162,7 +165,11 @@ class _SurahSelectionScreenState extends ConsumerState<SurahSelectionScreen> {
               arabicTitle: s.surahNameAr,
               completed: completed,
               progress: completed ? 1 : 0,
-              onTap: () => context.go('/reader/${s.id}'),
+              onTap: locked != null
+                  ? () => ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(SnackBar(content: Text(locked)))
+                  : () => context.push('/reader/${s.id}'),
             );
           }),
           const SizedBox(height: 12),

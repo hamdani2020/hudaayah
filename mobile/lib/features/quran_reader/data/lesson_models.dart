@@ -1,4 +1,5 @@
 import '../../exercises/data/exercise_models.dart';
+import 'lesson_audio.dart';
 
 /// DTOs for the `/lessons/{id}/` response.
 ///
@@ -6,13 +7,17 @@ import '../../exercises/data/exercise_models.dart';
 /// sacred text, [translation] is an attributed translation, and the two are
 /// never merged in the model or the UI.
 class WordPiece {
+  /// QF word `position` (1-based, words only). Null if the backend did not send
+  /// it; such a word can never be highlighted.
+  final int? position;
   final String? arabic;
   final String? translation;
   final String? transliteration;
 
-  const WordPiece({this.arabic, this.translation, this.transliteration});
+  const WordPiece({this.position, this.arabic, this.translation, this.transliteration});
 
   factory WordPiece.fromJson(Map<String, dynamic> j) => WordPiece(
+        position: (j['position'] as num?)?.toInt(),
         arabic: j['arabic'] as String?,
         translation: j['translation'] as String?,
         transliteration: j['transliteration'] as String?,
@@ -26,12 +31,17 @@ class Ayah {
   final String? audioUrl;
   final List<WordPiece> words;
 
+  /// True when [arabic] already ends with its own ayah-number marker, so the
+  /// app must not draw another. Missing from the response means false.
+  final bool textHasAyahNumber;
+
   const Ayah({
     required this.verseKey,
     this.arabic,
     this.translation,
     this.audioUrl,
     this.words = const [],
+    this.textHasAyahNumber = false,
   });
 
   factory Ayah.fromJson(Map<String, dynamic> j) => Ayah(
@@ -42,6 +52,7 @@ class Ayah {
         words: ((j['words'] as List?) ?? [])
             .map((w) => WordPiece.fromJson((w as Map).cast<String, dynamic>()))
             .toList(),
+        textHasAyahNumber: j['text_has_ayah_number'] as bool? ?? false,
       );
 }
 
@@ -61,6 +72,10 @@ class Lesson {
   final List<Exercise> exercises;
   final String attribution;
 
+  /// Reciter, clip and word timings; null if the backend sent none (older
+  /// responses), in which case per-ayah `audio_url`s are used.
+  final LessonAudio? audio;
+
   const Lesson({
     required this.id,
     required this.title,
@@ -76,6 +91,7 @@ class Lesson {
     required this.ayahs,
     required this.exercises,
     required this.attribution,
+    this.audio,
   });
 
   factory Lesson.fromJson(Map<String, dynamic> j) {
@@ -99,6 +115,7 @@ class Lesson {
           .map((e) => Exercise.fromJson((e as Map).cast<String, dynamic>()))
           .toList(),
       attribution: content['attribution'] as String? ?? '',
+      audio: LessonAudio.tryParse(j['audio']),
     );
   }
 

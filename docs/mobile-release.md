@@ -23,10 +23,15 @@ Run from `mobile/android` (Homebrew `fastlane …` or `bundle exec fastlane …`
    - Bug fixes: `1.0.1` → `1.0.2`. New features: `1.0.2` → `1.1.0`.
    - The `+N` part is ignored. The build number is set automatically to the highest build
      on Play + 1.
-2. **Release notes** (optional): create
-   `mobile/android/fastlane/metadata/android/en-US/changelogs/<build number>.txt`
-   (max 500 characters). Run `fastlane check` to see the build number: deleted drafts use
-   up numbers too, so don't guess. Without it, `default.txt` is used.
+2. **Release notes (required):** add an entry for the new version at the top of
+   `mobile/assets/changelog.json` (`version`, `new`, `fixed`). It is the single source:
+   - the app shows it in "What's new" (once after updating, and in Profile → What's new);
+   - fastlane turns it into the Play "What's new" text. If the full list is over Play's
+     500-character limit, Play gets the new items plus "And N fixes. See What's new in
+     the app."
+   The release stops if the version has no entry. `fastlane check` prints the Play text.
+   For a one-off Play text, a hand-written
+   `fastlane/metadata/android/en-US/changelogs/<build number>.txt` overrides it.
 3. Commit.
 
 ## Releasing
@@ -82,7 +87,8 @@ To re-import from Play Console: `fastlane supply init` (overwrites the local fil
 | `The caller does not have permission` | Missing permission for the service account in Play Console → Users and permissions. |
 | `Bundle is signed with …, expected the upload key` | `key.properties` points to the wrong keystore. Nothing was uploaded. |
 | `Version code N has already been used` | Should not happen: the lookup includes deleted drafts. If it does, another upload happened at the same moment, or the bundle library could not be read (look for "Could not read Play's bundle library" in the log). Run again. |
-| Changelog too long | Shorten `changelogs/<N>.txt` or `default.txt` to 500 characters. |
+| `No release notes for X.Y.Z` | Add an entry for that version to `mobile/assets/changelog.json`. |
+| Release notes too long | Shorten the "new" items in `changelog.json` (Play limit 500 characters). |
 
 Passwords in `key.properties` must not contain a backslash (`\`), because Java reads it
 as an escape character.

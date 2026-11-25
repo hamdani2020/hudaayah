@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/config/app_config.dart';
-import '../../../core/utils/external_link.dart';
 import '../../../core/widgets/hudaayah_top_bar.dart';
 import '../../../core/widgets/stat_card.dart';
 import '../../authentication/application/auth_controller.dart';
 import '../../progress/data/progress_models.dart';
 import '../../progress/data/progress_repository.dart';
+import '../../quran_reader/application/reader_settings.dart';
+import '../../quran_reader/presentation/widgets/reader_display_sheet.dart';
 import '../application/reminder_controller.dart';
+import '../data/reciter_repository.dart';
+import 'reciter_picker_sheet.dart';
+import 'reminder_actions.dart';
+import '../../progress/presentation/widgets/day_slot.dart';
 import 'widgets/history_tile.dart';
 import 'widgets/settings_tile.dart';
+import '../../whats_new/data/changelog.dart';
 
 /// Learning History & Profile (design-mapping §2, screen 08). Identity header,
 /// a 3-up metrics row, a simplified weekly rhythm, recent reflections, a
@@ -28,52 +35,23 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  Future<void> _setReminderEnabled(bool enabled) async {
-    final result =
-        await ref.read(reminderControllerProvider.notifier).setEnabled(enabled);
-    if (!mounted) return;
-    _showReminderResult(result,
-        okMessage: enabled ? 'Daily reminder is on.' : 'Daily reminder is off.');
-  }
-
-  Future<void> _pickReminderTime(ReminderSettings current) async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: current.time,
-      helpText: 'Daily reminder time',
-    );
-    if (picked == null || !mounted) return;
-    final controller = ref.read(reminderControllerProvider.notifier);
-    var result = await controller.setTime(picked);
-    // Choosing a time is a clear sign the learner wants the reminder.
-    if (result == ReminderChangeResult.ok && !current.enabled) {
-      result = await controller.setEnabled(true);
-    }
-    if (!mounted) return;
-    _showReminderResult(result,
-        okMessage: 'Daily reminder set for ${picked.format(context)}.');
-  }
-
-  void _showReminderResult(ReminderChangeResult result, {required String okMessage}) {
-    final message = switch (result) {
-      ReminderChangeResult.ok => okMessage,
-      ReminderChangeResult.permissionDenied =>
-        'Notifications are off for Hudaayah. You can allow them in your phone settings.',
-      ReminderChangeResult.failed =>
-        'We could not set the reminder. Please try again.',
-    };
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final user = ref.watch(authControllerProvider).valueOrNull?.user;
     final summary = ref.watch(progressSummaryProvider).valueOrNull;
     final reminder = ref.watch(reminderControllerProvider).valueOrNull;
+    final appVersion = ref.watch(appVersionProvider).valueOrNull;
 
+    final reciterId =
+        ref.watch(selectedReciterProvider).valueOrNull ?? defaultReciterId;
+    final reciterName = ref
+        .watch(recitersProvider)
+        .valueOrNull
+        ?.where((r) => r.id == reciterId)
+        .firstOrNull
+        ?.name;
+    final readerMode = ref.watch(readerDisplayModeProvider).valueOrNull;
     final streak = summary?.streak ?? 0;
     final xp = summary?.totalXp ?? 0;
     final completedLessons =
@@ -104,8 +82,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   if (completedLessons.isEmpty)
                     Text(
                       'Your completed lessons will appear here as you learn.',
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: AppTheme.onSurfaceVariant),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.onSurfaceVariant,
+                      ),
                     )
                   else
                     for (final l in completedLessons) ...[
@@ -137,10 +116,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           title: 'Translation',
                           subtitle: 'Saheeh International',
                         ),
-                        const SettingsTile(
+                        SettingsTile(
+                          icon: Icons.chrome_reader_mode_outlined,
+                          title: 'Reading view',
+                          subtitle: readerMode == null
+                              ? null
+                              : readerDisplayModeLabel(readerMode),
+                          onTap: () => showReaderDisplaySheet(context),
+                        ),
+                        SettingsTile(
                           icon: Icons.record_voice_over,
                           title: 'Reciter',
-                          subtitle: 'Mishary Rashid Alafasy',
+                          subtitle: reciterName,
+                          onTap: () => showReciterPicker(context),
                         ),
                         SettingsTile(
                           icon: Icons.notifications,
@@ -148,29 +136,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           subtitle: reminder == null
                               ? null
                               : reminder.enabled
-                                  ? 'Every day at ${reminder.time.format(context)}'
-                                  : 'Off · tap to set a time',
+                              ? 'Every day at ${reminder.time.format(context)}'
+                              : 'Off · tap to set a time',
                           onTap: reminder == null
                               ? null
-                              : () => _pickReminderTime(reminder),
+                              : () => pickReminderTime(context, ref, reminder),
                           trailing: Switch(
                             value: reminder?.enabled ?? false,
                             onChanged: reminder == null
                                 ? null
-                                : (v) => _setReminderEnabled(v),
+                                : (v) => setReminderEnabled(context, ref, v),
                           ),
                         ),
                         SettingsTile(
                           icon: Icons.security,
                           title: 'Privacy Policy',
-                          onTap: () => openExternalLink(
-                              context, AppConfig.privacyPolicyUrl),
+                          onTap: () => context.push('/legal/privacy'),
                         ),
                         SettingsTile(
                           icon: Icons.description_outlined,
                           title: 'Terms of Use',
-                          onTap: () =>
-                              openExternalLink(context, AppConfig.termsUrl),
+                          onTap: () => context.push('/legal/terms'),
+                        ),
+                        SettingsTile(
+                          icon: Icons.help_outline,
+                          title: 'Account deletion info',
+                          onTap: () => context.push('/legal/delete-account'),
+                        ),
+                        SettingsTile(
+                          icon: Icons.new_releases_outlined,
+                          title: "What's new",
+                          subtitle: appVersion == null
+                              ? null
+                              : 'Version ${appVersion.version}',
+                          onTap: () => context.push('/whats-new'),
                         ),
                       ],
                     ),
@@ -207,23 +206,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         Text(
                           AppConfig.qfAttribution,
                           textAlign: TextAlign.center,
-                          style: theme.textTheme.labelSmall
-                              ?.copyWith(color: AppTheme.onSurfaceVariant),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: AppTheme.onSurfaceVariant,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           AppConfig.fontAttribution,
                           textAlign: TextAlign.center,
-                          style: theme.textTheme.labelSmall
-                              ?.copyWith(color: AppTheme.onSurfaceVariant),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: AppTheme.onSurfaceVariant,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'Hudaayah • Built with reverence & care',
                           textAlign: TextAlign.center,
-                          style: theme.textTheme.labelSmall
-                              ?.copyWith(color: AppTheme.onSurfaceVariant),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: AppTheme.onSurfaceVariant,
+                          ),
                         ),
+                        if (appVersion != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            'Version ${appVersion.version} (${appVersion.buildNumber})',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppTheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -260,8 +272,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                    'This permanently deletes your account and all your learning '
-                    'progress, XP and streak. This cannot be undone.'),
+                  'This permanently deletes your account and all your learning '
+                  'progress, XP and streak. This cannot be undone.',
+                ),
                 if (error != null) ...[
                   const SizedBox(height: 12),
                   Text(error!, style: const TextStyle(color: AppTheme.error)),
@@ -291,7 +304,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           if (ctx.mounted) {
                             setDialogState(() {
                               deleting = false;
-                              error = 'We could not delete your account. '
+                              error =
+                                  'We could not delete your account. '
                                   'Please check your connection and try again.';
                             });
                           }
@@ -353,11 +367,15 @@ class _ProfileCard extends StatelessWidget {
                   CircleAvatar(
                     radius: 32,
                     backgroundColor: AppTheme.surfaceContainerHigh,
-                    backgroundImage:
-                        avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                    backgroundImage: avatarUrl != null
+                        ? NetworkImage(avatarUrl)
+                        : null,
                     child: avatarUrl == null
-                        ? const Icon(Icons.person,
-                            size: 32, color: AppTheme.onSurfaceVariant)
+                        ? const Icon(
+                            Icons.person,
+                            size: 32,
+                            color: AppTheme.onSurfaceVariant,
+                          )
                         : null,
                   ),
                   Positioned(
@@ -371,8 +389,11 @@ class _ProfileCard extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: AppTheme.secondaryFixed,
                       ),
-                      child: const Icon(Icons.verified,
-                          size: 14, color: AppTheme.secondary),
+                      child: const Icon(
+                        Icons.verified,
+                        size: 14,
+                        color: AppTheme.secondary,
+                      ),
                     ),
                   ),
                 ],
@@ -382,16 +403,20 @@ class _ProfileCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name,
-                        style: theme.textTheme.headlineSmall
-                            ?.copyWith(color: AppTheme.primary)),
+                    Text(
+                      name,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: AppTheme.primary,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       memberLine,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(color: AppTheme.onSurfaceVariant),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppTheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -459,15 +484,18 @@ class _WeeklyRhythm extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Weekly Discipline',
-              style: theme.textTheme.headlineSmall
-                  ?.copyWith(color: AppTheme.primary)),
+          Text(
+            'Weekly Discipline',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: AppTheme.primary,
+            ),
+          ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               for (var i = 0; i < 7; i++)
-                _DaySlot(
+                DaySlot(
                   label: _days[i],
                   active: i < week.length && week[i].active,
                   isToday: i < week.length && week[i].isToday,
@@ -476,52 +504,6 @@ class _WeeklyRhythm extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _DaySlot extends StatelessWidget {
-  const _DaySlot({
-    required this.label,
-    required this.active,
-    required this.isToday,
-  });
-
-  final String label;
-  final bool active;
-  final bool isToday;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      children: [
-        Text(label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: isToday ? AppTheme.primary : AppTheme.onSurfaceVariant,
-              fontWeight: isToday ? FontWeight.w700 : null,
-            )),
-        const SizedBox(height: 6),
-        Container(
-          width: 36,
-          height: 36,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: active
-                ? AppTheme.primaryContainer
-                : AppTheme.surfaceContainerHigh,
-            border: isToday
-                ? Border.all(color: AppTheme.secondaryContainer, width: 2)
-                : null,
-          ),
-          child: Icon(
-            Icons.star,
-            size: 16,
-            color: active ? AppTheme.tertiaryFixedDim : AppTheme.outlineVariant,
-          ),
-        ),
-      ],
     );
   }
 }

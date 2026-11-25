@@ -3,25 +3,25 @@ import 'package:flutter/material.dart';
 import '../../../../app/theme.dart';
 
 /// Floating control pill at the bottom of the reader (design-mapping §2 screen
-/// 06): A-/A+ font-size steppers, a "Translation" visibility toggle, and a
-/// `tune` settings button.
+/// 06): A-/A+ font-size steppers, a "View" button (opens the reading-view
+/// sheet), and a `tune` settings button.
 ///
-/// Presentational only — these forward to local widget state in the reader
-/// (font size + translation visibility); no controller/API is involved.
+/// Presentational only — these forward to the reader; no controller/API is
+/// involved.
 class ReaderFloatingControls extends StatelessWidget {
   const ReaderFloatingControls({
     super.key,
-    required this.translationVisible,
     required this.onDecreaseFont,
     required this.onIncreaseFont,
-    required this.onToggleTranslation,
+    required this.onOpenView,
     this.onTune,
   });
 
-  final bool translationVisible;
   final VoidCallback onDecreaseFont;
   final VoidCallback onIncreaseFont;
-  final VoidCallback onToggleTranslation;
+
+  /// Opens the "Reading view" sheet.
+  final VoidCallback onOpenView;
   final VoidCallback? onTune;
 
   @override
@@ -54,7 +54,7 @@ class ReaderFloatingControls extends StatelessWidget {
             const SizedBox(width: 12),
             InkWell(
               borderRadius: BorderRadius.circular(999),
-              onTap: onToggleTranslation,
+              onTap: onOpenView,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
@@ -64,15 +64,13 @@ class ReaderFloatingControls extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      translationVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+                    const Icon(
+                      Icons.visibility,
                       size: 16,
                       color: AppTheme.primary,
                     ),
                     const SizedBox(width: 6),
-                    Text('Translation',
+                    Text('View',
                         style: theme.textTheme.labelMedium
                             ?.copyWith(color: AppTheme.primary)),
                   ],

@@ -1,0 +1,206 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "N1 Replace `context.go` with `push` / `pushReplacement` per the design table": [
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795510907047
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795510917437
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795510999337
+      }
+    ],
+    "N2 `PopScope` in `HomeShell` (non-Home tab → Home), `ExerciseScreen` (confirm dialog),": [
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795510907515
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795511006844
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795511299560
+      }
+    ],
+    "N3 Extract reminder actions into a shared helper; add `ReminderSheet`. (R2)": [
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795510907734
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795511307328
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795511435932
+      }
+    ],
+    "N4 `HudaayahTopBar` opens the sheet; icon reflects reminder on/off. (R2)": [
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795510907957
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795511443140
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795513098484
+      }
+    ],
+    "N5 Generate `logo.png` (1x/2x/3x) from the app icon; register asset; use in the top bar. (R3)": [
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795510908370
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795513104960
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795513539597
+      }
+    ],
+    "N6 Add `webview_flutter` (version compatible with AGP 8.11 / compileSdk 36). (R4)": [
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795510908584
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795513546373
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795513874652
+      }
+    ],
+    "N7 `LegalPageScreen` + `/legal/:page` route (public), host allow-list, external links,": [
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795510908803
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795513881603
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795514927289
+      }
+    ],
+    "N8 Profile tiles and sign-in links open `/legal/...`; add `deleteAccountUrl`. (R4)": [
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795510909014
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795514934252
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795514986220
+      }
+    ],
+    "N9 `flutter analyze`, update the widget test for new routes, release build check. (R1–R4)": [
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795510909390
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795514993139
+      },
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795516040464
+      }
+    ],
+    "O1 Back from reader / practice / completion / each tab behaves as in R1.": [
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795510909738
+      },
+      {
+        "executionId": "5e069fb6-2f83-4c83-ac48-9394a3097719",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795517106554
+      }
+    ],
+    "O2 Bell opens the reminder sheet; changing it there updates Profile.": [
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795510909949
+      },
+      {
+        "executionId": "5e069fb6-2f83-4c83-ac48-9394a3097719",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795517107322
+      }
+    ],
+    "O3 Logo looks sharp in the top bar.": [
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795510910241
+      },
+      {
+        "executionId": "5e069fb6-2f83-4c83-ac48-9394a3097719",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795517107864
+      }
+    ],
+    "O4 Privacy / Terms / Delete account open inside the app, signed in and signed out;": [
+      {
+        "executionId": "edaeb45a-23b0-4561-aa0b-a374ff928eb3",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795510910515
+      },
+      {
+        "executionId": "5e069fb6-2f83-4c83-ac48-9394a3097719",
+        "chatSessionId": "sess_4600e015-1f04-4385-bb7e-d64b22376dbe",
+        "timestamp": 1795517108352
+      }
+    ]
+  }
+}

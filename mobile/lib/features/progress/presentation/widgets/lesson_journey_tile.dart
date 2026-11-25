@@ -1,100 +1,132 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme.dart';
+import '../../application/journey_presenter.dart';
 
-/// A single row in the "Your Learning Journey" list (design-mapping §2 screen
-/// 04). Completed lessons show a `primary-fixed` check tile + "Completed" chip;
-/// in-progress lessons show a `secondary-fixed` tile + an amber "In Progress"
-/// chip. Presentational — the caller maps real `LessonProgress` into these.
+/// A single row in the "Your Learning Journey" list. Shows one of four states:
+/// completed, in progress, up next (Start) or locked (muted, lock icon).
+/// Presentational: [data] is derived by `journeyTileFor`.
 class LessonJourneyTile extends StatelessWidget {
   const LessonJourneyTile({
     super.key,
-    required this.title,
-    required this.subtitle,
-    required this.completed,
+    required this.data,
     this.onTap,
   });
 
-  final String title;
-  final String subtitle;
-  final bool completed;
+  final JourneyTileData data;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final locked = data.state == JourneyTileState.locked;
+    final content = Padding(
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          _Leading(state: data.state),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(data.title,
+                    style:
+                        theme.textTheme.titleMedium?.copyWith(fontSize: 15)),
+                const SizedBox(height: 2),
+                Text(data.subtitle, style: theme.textTheme.labelSmall),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          _StateChip(state: data.state),
+        ],
+      ),
+    );
     return Material(
       color: AppTheme.surfaceContainerLowest,
       borderRadius: BorderRadius.circular(AppTheme.radiusXl),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppTheme.radiusXl),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: completed
-                      ? AppTheme.primaryFixed
-                      : AppTheme.secondaryFixed,
-                ),
-                child: Icon(
-                  completed ? Icons.check_circle : Icons.auto_stories,
-                  size: 20,
-                  color: completed
-                      ? AppTheme.primary
-                      : AppTheme.onSecondaryFixed,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: theme.textTheme.titleMedium
-                            ?.copyWith(fontSize: 15)),
-                    const SizedBox(height: 2),
-                    Text(subtitle, style: theme.textTheme.labelSmall),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              _StateChip(completed: completed),
-            ],
-          ),
-        ),
+        child: locked ? Opacity(opacity: 0.65, child: content) : content,
       ),
     );
   }
 }
 
+class _Leading extends StatelessWidget {
+  const _Leading({required this.state});
+  final JourneyTileState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final (IconData icon, Color bg, Color fg) = switch (state) {
+      JourneyTileState.completed => (
+          Icons.check_circle,
+          AppTheme.primaryFixed,
+          AppTheme.primary
+        ),
+      JourneyTileState.locked => (
+          Icons.lock_outline,
+          AppTheme.surfaceContainerHigh,
+          AppTheme.onSurfaceVariant
+        ),
+      _ => (
+          Icons.auto_stories,
+          AppTheme.secondaryFixed,
+          AppTheme.onSecondaryFixed
+        ),
+    };
+    return Container(
+      width: 36,
+      height: 36,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: bg),
+      child: Icon(icon, size: 20, color: fg),
+    );
+  }
+}
+
 class _StateChip extends StatelessWidget {
-  const _StateChip({required this.completed});
-  final bool completed;
+  const _StateChip({required this.state});
+  final JourneyTileState state;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final (String label, Color bg, Color fg) = switch (state) {
+      JourneyTileState.completed => (
+          'Completed',
+          AppTheme.surfaceContainerHigh,
+          AppTheme.onSurfaceVariant
+        ),
+      JourneyTileState.inProgress => (
+          'In Progress',
+          AppTheme.secondaryFixed.withValues(alpha: 0.5),
+          AppTheme.secondary
+        ),
+      JourneyTileState.upNext => (
+          'Start',
+          AppTheme.primaryFixed,
+          AppTheme.primary
+        ),
+      JourneyTileState.locked => (
+          'Locked',
+          AppTheme.surfaceContainerHigh,
+          AppTheme.onSurfaceVariant
+        ),
+    };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: completed
-            ? AppTheme.surfaceContainerHigh
-            : AppTheme.secondaryFixed.withValues(alpha: 0.5),
+        color: bg,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        completed ? 'Completed' : 'In Progress',
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: completed ? AppTheme.onSurfaceVariant : AppTheme.secondary,
-          fontWeight: FontWeight.w700,
-        ),
+        label,
+        style: theme.textTheme.labelSmall
+            ?.copyWith(color: fg, fontWeight: FontWeight.w700),
       ),
     );
   }

@@ -37,6 +37,10 @@ class AppConfig {
     'TERMS_URL',
     defaultValue: 'https://privacy.hudaayah.xyz/terms/',
   );
+  static const String deleteAccountUrl = String.fromEnvironment(
+    'DELETE_ACCOUNT_URL',
+    defaultValue: 'https://privacy.hudaayah.xyz/delete-account/',
+  );
 
   /// Visible Quran Foundation attribution (required by QF terms).
   static const String qfAttribution = 'Quran content provided by Quran Foundation';

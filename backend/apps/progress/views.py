@@ -4,9 +4,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.authentication import BearerTokenAuthentication
-from apps.common.errors import AppError
+from apps.common.errors import AppError, LessonLocked
 from apps.exercises.models import Exercise
 from apps.lessons.models import Lesson
+from apps.lessons.services import is_lesson_unlocked
 
 from .models import AttemptStatus, LessonAttempt
 from .serializers import (
@@ -60,6 +61,8 @@ class StartAttemptView(APIView):
             lesson = Lesson.objects.published().get(pk=lesson_id)
         except Lesson.DoesNotExist:
             raise NotFound(message="Lesson not found.")
+        if not is_lesson_unlocked(request.user, lesson):
+            raise LessonLocked()
         attempt = start_attempt(user=request.user, lesson=lesson)
         return Response(
             StartAttemptResponseSerializer(attempt).data,

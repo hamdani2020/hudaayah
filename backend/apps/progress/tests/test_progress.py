@@ -66,7 +66,8 @@ def test_progress_is_user_scoped():
     b, _ = _client(sub="b")  # different user, no activity
     body = b.get("/api/v1/progress/").json()
     assert body["total_xp"] == 0
-    assert body["lessons"] == []
+    assert [(l["lesson_id"], l["state"]) for l in body["lessons"]] == [
+        (lesson.id, "available")]
 
 
 def test_duplicate_completion_does_not_double_award():
@@ -136,3 +137,65 @@ def test_week_activity_is_user_scoped_and_in_summary():
     assert not any(d["active"] for d in week_b)
     week_a = a.get("/api/v1/progress/").json()["week"]
     assert any(d["active"] and d["is_today"] for d in week_a)
+
+
+def test_summary_lists_every_published_lesson_with_state():
+    from apps.progress.summary import progress_summary
+    _, user = _client("p3")
+    first, _ex = _lesson()
+    second = Lesson.objects.create(
+        title="Al-Baqarah 1-5", surah=2, ayah_start=1, ayah_end=5, order=2,
+        status=ContentStatus.PUBLISHED,
+    )
+    Lesson.objects.create(title="Draft", surah=3, ayah_start=1, ayah_end=2, order=3)
+    lessons = progress_summary(user)["lessons"]
+    assert [(l["lesson_id"], l["state"]) for l in lessons] == [
+        (first.id, "available"), (second.id, "locked")]
+    assert lessons[0]["exercises_total"] == 1
+    assert lessons[0]["exercises_answered"] == 0
+    assert lessons[0]["previous_title"] is None
+    assert lessons[1]["previous_title"] == "Al-Fatihah"
+
+
+def test_completion_response_has_streak_week_total_and_replays_identically():
+    lesson, ex = _lesson()
+    client, user = _client(sub="p4")
+    DailyActivity.objects.create(
+        user=user, date=timezone.localdate() - timedelta(days=1),
+        xp_earned=10, lessons_completed=1,
+    )
+    aid = client.post(f"/api/v1/lessons/{lesson.id}/attempts/").json()["id"]
+    client.post(f"/api/v1/attempts/{aid}/answers/",
+                {"exercise_id": ex.id, "submitted": {"selected_option_id": "a"}},
+                format="json")
+    url = f"/api/v1/attempts/{aid}/complete/"
+    first = client.post(url, {"idempotency_key": "k"}, format="json").json()
+    assert first["streak"] == {"current": 2, "previous": 1, "increased": True}
+    assert first["total_xp"] == 20
+    assert len(first["week"]) == 7
+    again = client.post(url, {"idempotency_key": "k"}, format="json").json()
+    assert again == first
+
+
+def test_streak_increased_only_on_first_completion_of_the_day():
+    lesson, ex = _lesson()
+    second = Lesson.objects.create(
+        title="Two", surah=1, ayah_start=2, ayah_end=2, order=2,
+        status=ContentStatus.PUBLISHED,
+    )
+    ex2 = Exercise.objects.create(
+        lesson=second, type=ExerciseType.MULTIPLE_CHOICE, position=1,
+        status=ContentStatus.PUBLISHED,
+        config={"options": [{"id": "a"}]}, answer_key={"correct_option_id": "a"},
+    )
+    client, _ = _client(sub="streak-day")
+    bodies = []
+    for les, e, key in ((lesson, ex, "k1"), (second, ex2, "k2")):
+        aid = client.post(f"/api/v1/lessons/{les.id}/attempts/").json()["id"]
+        client.post(f"/api/v1/attempts/{aid}/answers/",
+                    {"exercise_id": e.id, "submitted": {"selected_option_id": "a"}},
+                    format="json")
+        bodies.append(client.post(f"/api/v1/attempts/{aid}/complete/",
+                                  {"idempotency_key": key}, format="json").json())
+    assert bodies[0]["streak"] == {"current": 1, "previous": 0, "increased": True}
+    assert bodies[1]["streak"] == {"current": 1, "previous": 1, "increased": False}

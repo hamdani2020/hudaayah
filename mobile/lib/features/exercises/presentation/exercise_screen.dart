@@ -8,6 +8,9 @@ import '../../../core/widgets/chips.dart';
 import '../../../core/widgets/feedback_drawer.dart';
 import '../../../core/widgets/segmented_progress_bar.dart';
 import '../../quran_reader/data/lesson_models.dart';
+import '../../progress/data/progress_models.dart';
+import '../../progress/presentation/streak_celebration_screen.dart';
+import '../../progress/presentation/widgets/lesson_locked_notice.dart';
 import '../application/exercise_session_controller.dart';
 import '../data/exercise_models.dart';
 import 'listening_recall_widget.dart';
@@ -29,21 +32,59 @@ class ExerciseScreen extends ConsumerWidget {
     final sessionAsync = ref.watch(exerciseSessionProvider(arg));
     final controller = ref.read(exerciseSessionProvider(arg).notifier);
 
-    return Scaffold(
+    Future<void> confirmExit() async {
+      final leave = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Leave this lesson?'),
+          content: const Text("Your answers so far won't be saved."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Keep practising'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Leave'),
+            ),
+          ],
+        ),
+      );
+      if (leave == true && context.mounted) {
+        context.canPop() ? context.pop() : context.go('/home');
+      }
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) confirmExit();
+      },
+      child: Scaffold(
       backgroundColor: AppTheme.surface,
       body: SafeArea(
         child: sessionAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(
-            child: Text(
-                err is ApiException ? err.message : 'Could not start practice.'),
-          ),
+          error: (err, _) => isLessonLocked(err)
+              ? const LessonLockedNotice()
+              : Center(
+                  child: Text(err is ApiException
+                      ? err.message
+                      : 'Could not start practice.'),
+                ),
           data: (session) {
             // On completion, hand off to the celebration screen with the summary.
             if (session.isComplete) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (context.mounted) {
-                  context.go('/lesson/${lesson.id}/complete',
+                  final streak = StreakChange.fromSummary(session.summary);
+                  final attemptId = session.attemptId;
+                  final celebrate = streak != null &&
+                      streak.increased &&
+                      attemptId != null &&
+                      markStreakCelebrationShown(attemptId);
+                  context.pushReplacement(
+                      '/lesson/${lesson.id}/${celebrate ? 'streak' : 'complete'}',
                       extra: session.summary);
                 }
               });
@@ -60,10 +101,11 @@ class ExerciseScreen extends ConsumerWidget {
               exercise: exercise,
               onSubmit: controller.submit,
               onNext: controller.next,
-              onExit: () => context.go('/home'),
+              onExit: confirmExit,
             );
           },
         ),
+      ),
       ),
     );
   }
@@ -189,6 +231,7 @@ class _ExerciseBody extends StatelessWidget {
         return ListeningRecallWidget(
             exercise: exercise,
             ayahs: lesson.ayahs,
+            lessonAudio: lesson.audio,
             enabled: enabled,
             onSubmit: onSubmit);
       case ExerciseType.unknown:

@@ -7,6 +7,7 @@ import '../../../core/config/app_config.dart';
 import '../../../core/widgets/hudaayah_top_bar.dart';
 import '../../authentication/application/auth_controller.dart';
 import '../../review/data/review_repository.dart';
+import '../application/journey_presenter.dart';
 import '../data/progress_models.dart';
 import '../data/progress_repository.dart';
 import 'widgets/habit_card.dart';
@@ -105,10 +106,17 @@ class HomeScreen extends ConsumerWidget {
       );
     }
 
-    final focus = lessons.firstWhere(
-      (l) => !l.isCompleted,
-      orElse: () => lessons.first,
-    );
+    final focus = focusLesson(lessons);
+    if (focus == null) {
+      // Every lesson is locked (should not happen: the first is always open).
+      return HabitCard(
+        title: 'Start Learning',
+        subtitle: 'Your first lesson is waiting',
+        percent: 0,
+        buttonLabel: 'Start',
+        onContinue: () => context.go('/surah'),
+      );
+    }
     final name =
         focus.surahNameEn.isNotEmpty ? focus.surahNameEn : focus.title;
     final subtitle = focus.surahMeaning.isNotEmpty
@@ -118,9 +126,13 @@ class HomeScreen extends ConsumerWidget {
     return HabitCard(
       title: 'Surah $name',
       subtitle: subtitle,
-      percent: focus.isCompleted ? 1.0 : 0.0,
-      buttonLabel: focus.isCompleted ? 'Review $name' : 'Continue Reading',
-      onContinue: () => context.go('/reader/${focus.lessonId}'),
+      percent: focusPercent(focus),
+      buttonLabel: focus.isCompleted
+          ? 'Review $name'
+          : focus.isUpNext
+              ? 'Start'
+              : 'Continue Reading',
+      onContinue: () => context.push('/reader/${focus.lessonId}'),
     );
   }
 }
@@ -168,13 +180,19 @@ class _JourneyList extends StatelessWidget {
       children: [
         for (final l in lessons) ...[
           Builder(builder: (_) {
-            final name = l.surahNameEn.isNotEmpty ? l.surahNameEn : l.title;
+            final data = journeyTileFor(l);
             return LessonJourneyTile(
-              title: 'Surah $name',
-              subtitle: l.isCompleted
-                  ? '${l.ayahRange} • Completed'
-                  : '${l.ayahRange} • Word Meanings & Practice',
-              completed: l.isCompleted,
+              data: data,
+              onTap: () {
+                if (data.state == JourneyTileState.locked) {
+                  ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                        SnackBar(content: Text(data.lockedMessage ?? '')));
+                } else {
+                  context.push('/reader/${data.lessonId}');
+                }
+              },
             );
           }),
           const SizedBox(height: 8),

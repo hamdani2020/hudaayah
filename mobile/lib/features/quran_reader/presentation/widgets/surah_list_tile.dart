@@ -20,7 +20,11 @@ class SurahListTile extends StatelessWidget {
     required this.completed,
     required this.progress,
     required this.onTap,
+    this.lockedMessage,
   });
+
+  /// Non-null when the lesson is locked; shown in place of the progress bar.
+  final String? lockedMessage;
 
   final int number;
   final String name;
@@ -97,7 +101,25 @@ class SurahListTile extends StatelessWidget {
                           ?.copyWith(color: AppTheme.onSurfaceVariant),
                     ),
                     const SizedBox(height: 10),
-                    if (completed)
+                    if (lockedMessage != null)
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.lock_outline,
+                            size: 16,
+                            color: AppTheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              lockedMessage!,
+                              style: textTheme.labelSmall?.copyWith(
+                                  color: AppTheme.onSurfaceVariant),
+                            ),
+                          ),
+                        ],
+                      )
+                    else if (completed)
                       Row(
                         children: [
                           const Icon(
@@ -129,8 +151,8 @@ class SurahListTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(
-                Icons.chevron_right,
+              Icon(
+                lockedMessage != null ? Icons.lock : Icons.chevron_right,
                 color: AppTheme.onSurfaceVariant,
               ),
             ],

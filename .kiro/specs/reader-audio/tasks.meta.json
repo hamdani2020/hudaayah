@@ -1,0 +1,184 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "A0 Spike: check reciters, chapter audio and segments on pre-live for chapters 1–2;": [
+      {
+        "executionId": "6b33c5eb-2bfd-4ed5-a589-fe4a4febe3a9",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795517173664
+      },
+      {
+        "executionId": "6b33c5eb-2bfd-4ed5-a589-fe4a4febe3a9",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795517180140
+      },
+      {
+        "executionId": "deb308e6-8f56-4a11-bcfe-051a5b5eed52",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795517610218
+      },
+      {
+        "executionId": "deb308e6-8f56-4a11-bcfe-051a5b5eed52",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795518361627
+      }
+    ],
+    "A1 Adapter: `get_reciters`, `get_chapter_audio(segments=True)`, 1-week cache,": [
+      {
+        "executionId": "6b33c5eb-2bfd-4ed5-a589-fe4a4febe3a9",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795517173698
+      },
+      {
+        "executionId": "deb308e6-8f56-4a11-bcfe-051a5b5eed52",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795518365268
+      },
+      {
+        "executionId": "deb308e6-8f56-4a11-bcfe-051a5b5eed52",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795518614656
+      }
+    ],
+    "A2 `GET /reciters/` and `PATCH /me/preferences/` (validation, owner-only); tests. (R3)": [
+      {
+        "executionId": "6b33c5eb-2bfd-4ed5-a589-fe4a4febe3a9",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795517173748
+      },
+      {
+        "executionId": "deb308e6-8f56-4a11-bcfe-051a5b5eed52",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795518622935
+      },
+      {
+        "executionId": "deb308e6-8f56-4a11-bcfe-051a5b5eed52",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795518833785
+      }
+    ],
+    "A3 Lesson detail `audio` block (chapter or per-ayah mode, timings, reciter,": [
+      {
+        "executionId": "6b33c5eb-2bfd-4ed5-a589-fe4a4febe3a9",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795517173777
+      },
+      {
+        "executionId": "deb308e6-8f56-4a11-bcfe-051a5b5eed52",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795518837651
+      },
+      {
+        "executionId": "deb308e6-8f56-4a11-bcfe-051a5b5eed52",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795535813033
+      }
+    ],
+    "A4 `AudioController` on clipped chapter audio with position → verse/word mapping;": [
+      {
+        "executionId": "6b33c5eb-2bfd-4ed5-a589-fe4a4febe3a9",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795517173802
+      },
+      {
+        "executionId": "deb308e6-8f56-4a11-bcfe-051a5b5eed52",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795535816639
+      },
+      {
+        "executionId": "099ff5da-dc86-4743-b74b-03b357fd668b",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795536380393
+      },
+      {
+        "executionId": "099ff5da-dc86-4743-b74b-03b357fd668b",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795537187719
+      }
+    ],
+    "A5 Reader: positioned list, follow mode + Follow recitation button, real progress": [
+      {
+        "executionId": "6b33c5eb-2bfd-4ed5-a589-fe4a4febe3a9",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795517173828
+      },
+      {
+        "executionId": "099ff5da-dc86-4743-b74b-03b357fd668b",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795537191756
+      },
+      {
+        "executionId": "099ff5da-dc86-4743-b74b-03b357fd668b",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795537857953
+      }
+    ],
+    "A6 `AyahCard`: per-word spans with the current word highlighted; chip highlight;": [
+      {
+        "executionId": "6b33c5eb-2bfd-4ed5-a589-fe4a4febe3a9",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795517173860
+      },
+      {
+        "executionId": "099ff5da-dc86-4743-b74b-03b357fd668b",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795537861914
+      },
+      {
+        "executionId": "099ff5da-dc86-4743-b74b-03b357fd668b",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795538499923
+      }
+    ],
+    "A7 Reciter picker sheet in Profile; listening exercises use the chosen reciter. (R3)": [
+      {
+        "executionId": "6b33c5eb-2bfd-4ed5-a589-fe4a4febe3a9",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795517173896
+      },
+      {
+        "executionId": "099ff5da-dc86-4743-b74b-03b357fd668b",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795538503546
+      }
+    ],
+    "A8 `flutter analyze`, backend tests, release build. (R1–R3)": [
+      {
+        "executionId": "6b33c5eb-2bfd-4ed5-a589-fe4a4febe3a9",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795517173926
+      },
+      {
+        "executionId": "099ff5da-dc86-4743-b74b-03b357fd668b",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795539245136
+      },
+      {
+        "executionId": "099ff5da-dc86-4743-b74b-03b357fd668b",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795540244280
+      }
+    ],
+    "O1 Play-all on Al-Baqarah 1–5: the list keeps the recited ayah on screen; manual": [
+      {
+        "executionId": "6b33c5eb-2bfd-4ed5-a589-fe4a4febe3a9",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795517173958
+      }
+    ],
+    "O2 Words highlight in step with the reciter (spot-check with a qualified reader": [
+      {
+        "executionId": "6b33c5eb-2bfd-4ed5-a589-fe4a4febe3a9",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795517173983
+      }
+    ],
+    "O3 Change reciter in Profile: the reader, attribution and listening exercises use it;": [
+      {
+        "executionId": "6b33c5eb-2bfd-4ed5-a589-fe4a4febe3a9",
+        "chatSessionId": "sess_315f9946-0a29-4517-9ac2-986168088fa5",
+        "timestamp": 1795517174013
+      }
+    ]
+  }
+}
