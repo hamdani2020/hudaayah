@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -9,7 +10,7 @@ from apps.exercises.models import Exercise
 from apps.lessons.models import Lesson
 from apps.lessons.services import is_lesson_unlocked
 
-from .models import AttemptStatus, LessonAttempt
+from .models import AppOpenDay, AttemptStatus, LessonAttempt
 from .serializers import (
     CompleteAttemptRequestSerializer,
     StartAttemptResponseSerializer,
@@ -127,6 +128,21 @@ class ProgressView(APIView):
 
     def get(self, request):
         return Response(progress_summary(request.user))
+
+
+class AppOpenView(APIView):
+    """POST /activity/open/ — record that the caller opened the app today.
+
+    Idempotent: one row per user per day, however often it is called. Acts on
+    `request.user` only (no user id in the request).
+    """
+
+    authentication_classes = [BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        AppOpenDay.objects.get_or_create(user=request.user, date=timezone.localdate())
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class DailyActivityView(APIView):

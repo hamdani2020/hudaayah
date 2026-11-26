@@ -4,12 +4,15 @@ from django.contrib import admin
 from django.urls import include, path
 
 from apps.common.views import LandingPageView, LegalPageView
+from apps.progress.admin_views import retention_view
 
 api = settings.API_PREFIX
 
 urlpatterns = [
     # Public landing page (served on app.hudaayah.xyz).
     path("", LandingPageView.as_view(), name="landing"),
+    # Staff-only report; must come before admin.site.urls.
+    path("admin/retention/", retention_view, name="admin-retention"),
     path("admin/", admin.site.urls),
     # Public legal pages (served on privacy.hudaayah.xyz; also reachable on any allowed host).
     path("privacy/", LegalPageView.as_view(template_name="legal/privacy.html"), name="legal-privacy"),

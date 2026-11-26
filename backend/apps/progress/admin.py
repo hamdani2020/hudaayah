@@ -1,6 +1,16 @@
 from django.contrib import admin
 
-from .models import DailyActivity, ExerciseAnswer, LessonAttempt, UserProgress
+from .models import AppOpenDay, DailyActivity, ExerciseAnswer, LessonAttempt, UserProgress
+
+
+@admin.register(AppOpenDay)
+class AppOpenDayAdmin(admin.ModelAdmin):
+    list_display = ("user", "date")
+    list_filter = ("date",)
+    readonly_fields = tuple(f.name for f in AppOpenDay._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
 
 
 @admin.register(LessonAttempt)

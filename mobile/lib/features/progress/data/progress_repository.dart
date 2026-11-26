@@ -12,6 +12,11 @@ class ProgressRepository {
     final resp = await _dio.get('/progress/');
     return ProgressSummary.fromJson((resp.data as Map).cast<String, dynamic>());
   }
+
+  /// Tells the server the app was opened today (one record per day; idempotent).
+  Future<void> recordAppOpen() async {
+    await _dio.post('/activity/open/');
+  }
 }
 
 final progressRepositoryProvider = Provider<ProgressRepository>((ref) {

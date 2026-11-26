@@ -1,0 +1,41 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<p>Learners grouped by the day they signed up. "Returned on Day N" means they were active
+N days after signing up. A day only counts once it has fully passed. Staff accounts are
+excluded. Dates are server dates (UTC).</p>
+
+<form method="get" style="margin: 12px 0 20px;">
+  <label for="since">Signed up on or after</label>
+  <input type="date" id="since" name="since" value="{{ since }}">
+  <input type="submit" value="Filter">
+  {% if since %}<a href="?">Clear</a>{% endif %}
+</form>
+
+{% for table in tables %}
+  <h2>Returned = {{ table.title }}</h2>
+  <p class="help">{{ table.note }}</p>
+  <table style="margin-bottom: 28px;">
+    <thead>
+      <tr>
+        <th>Signup day</th>
+        <th>Signups</th>
+        {% for n in days %}<th>Day {{ n }}</th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in table.rows %}
+        <tr{% if row.is_total %} style="font-weight: bold;"{% endif %}>
+          <td>{{ row.label }}</td>
+          <td>{{ row.signups }}</td>
+          {% for cell in row.cells %}
+            <td>{% if cell.eligible %}{{ cell.returned }}/{{ cell.eligible }} ({{ cell.percent }}%){% else %}–{% endif %}</td>
+          {% endfor %}
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">No learners yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endfor %}
+<p class="help">– = that day has not passed yet for anyone in the group.</p>
+{% endblock %}

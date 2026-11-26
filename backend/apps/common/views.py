@@ -42,7 +42,7 @@ class LandingPageView(TemplateView):
 class LegalPageView(TemplateView):
     """Public, static legal pages (privacy, terms, account deletion). No auth, no DB."""
 
-    last_updated = "November 21, 2026"
+    last_updated = "November 25, 2026"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
