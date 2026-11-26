@@ -2,6 +2,13 @@
   "_comment": "Single source of release notes. Newest first. The app shows these in 'What's new'; fastlane turns the entry matching pubspec.yaml's version into the Play 'What's new' text (max 500 characters). Every release needs an entry.",
   "entries": [
     {
+      "version": "1.1.1",
+      "new": [],
+      "fixed": [
+        "Hudaayah now notes which days you open the app (only the date) to see whether it helps build a daily habit. Details are in the Privacy Policy."
+      ]
+    },
+    {
       "version": "1.1.0",
       "new": [
         "Choose your reciter in Profile",

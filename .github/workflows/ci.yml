@@ -1,0 +1,167 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      mobile: ${{ steps.filter.outputs.mobile }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - "backend/**"
+              - "docker-compose.yml"
+              - ".github/workflows/ci.yml"
+            mobile:
+              - "mobile/**"
+              - ".github/workflows/ci.yml"
+
+  backend:
+    name: Backend tests
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI_NETWORK: hudaayah-ci
+      CI_DB_HOST: hudaayah-ci-db
+      POSTGRES_DB: hudaayah_ci
+      POSTGRES_USER: hudaayah_ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate throwaway credentials for this run
+        run: |
+          db_password=$(openssl rand -hex 24)
+          secret_key=$(openssl rand -hex 32)
+          echo "::add-mask::$db_password"
+          echo "::add-mask::$secret_key"
+          {
+            echo "POSTGRES_PASSWORD=$db_password"
+            echo "DJANGO_SECRET_KEY=$secret_key"
+          } >> "$GITHUB_ENV"
+
+      - name: Start Postgres 16
+        run: |
+          docker network create "$CI_NETWORK"
+          docker run -d --name "$CI_DB_HOST" --network "$CI_NETWORK" \
+            -e POSTGRES_DB -e POSTGRES_USER -e POSTGRES_PASSWORD \
+            postgres:16
+          for _ in $(seq 1 30); do
+            if docker exec "$CI_DB_HOST" pg_isready -q -U "$POSTGRES_USER" -d "$POSTGRES_DB"; then
+              echo "Postgres is ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Postgres did not become ready"; docker logs "$CI_DB_HOST"; exit 1
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image (development requirements)
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          build-args: REQUIREMENTS=development
+          tags: hudaayah-backend:ci
+          load: true
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      - name: Migrations, checks and tests
+        run: |
+          # `-e NAME` (no value) passes the variable from the job environment, so the
+          # generated values never appear on the command line.
+          docker run --rm --network "$CI_NETWORK" \
+            -e DJANGO_SETTINGS_MODULE=config.settings.development \
+            -e DJANGO_SECRET_KEY \
+            -e POSTGRES_HOST="$CI_DB_HOST" -e POSTGRES_PORT=5432 \
+            -e POSTGRES_DB -e POSTGRES_USER -e POSTGRES_PASSWORD \
+            hudaayah-backend:ci \
+            sh -c "python manage.py makemigrations --check --dry-run \
+                   && python manage.py check \
+                   && python -m pytest -q"
+
+      - name: Remove the CI database
+        if: always()
+        run: |
+          docker rm -f "$CI_DB_HOST" >/dev/null 2>&1 || true
+          docker network rm "$CI_NETWORK" >/dev/null 2>&1 || true
+
+  mobile:
+    name: Mobile checks
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Changelog has an entry for the pubspec version
+        run: |
+          version=$(sed -nE 's/^version:[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' pubspec.yaml)
+          if ! jq -e --arg v "$version" \
+              '.entries[] | select(.version == $v) | ((.new // []) + (.fixed // [])) | length > 0' \
+              assets/changelog.json > /dev/null; then
+            echo "::error file=mobile/assets/changelog.json::No release notes for $version. Add an entry to mobile/assets/changelog.json."
+            exit 1
+          fi
+          echo "Changelog entry found for $version"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.9
+          cache: true
+
+      - run: flutter pub get
+
+      - run: flutter analyze
+
+      - run: flutter test
+
+      - name: Android debug build
+        run: flutter build apk --debug
+
+  ci-passed:
+    name: CI passed
+    if: always()
+    needs: [changes, backend, mobile]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All checks succeeded or were not needed
+        run: |
+          results="${{ needs.changes.result }} ${{ needs.backend.result }} ${{ needs.mobile.result }}"
+          echo "changes/backend/mobile: $results"
+          for r in $results; do
+            case "$r" in
+              success|skipped) ;;
+              *) echo "::error::A CI job did not pass ($r)."; exit 1 ;;
+            esac
+          done

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/progress/presentation/app_open_tracker.dart';
 import '../features/whats_new/presentation/whats_new_widgets.dart';
 import 'theme.dart';
 
@@ -62,8 +63,8 @@ class HomeShell extends StatelessWidget {
 
   Widget _buildScaffold() {
     return Scaffold(
-      // Shows "What's new" once after an update.
-      body: WhatsNewGate(child: navigationShell),
+      // Shows "What's new" once after an update; records today's app open.
+      body: AppOpenTracker(child: WhatsNewGate(child: navigationShell)),
       bottomNavigationBar: DecoratedBox(
         decoration: const BoxDecoration(
           border: Border(

@@ -99,3 +99,26 @@ class DailyActivity(models.Model):
             models.UniqueConstraint(fields=["user", "date"], name="uniq_user_date")
         ]
         indexes = [models.Index(fields=["user", "date"])]
+
+
+class AppOpenDay(models.Model):
+    """One row per user per day the app was opened (for Day-1/2/7 return rates).
+
+    Holds only the user and the date: no device, time of day or screen details.
+    Deleted with the user (account deletion).
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="app_open_days"
+    )
+    date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "date"], name="uniq_user_open_date")
+        ]
+        indexes = [models.Index(fields=["date"])]
+
+    def __str__(self) -> str:
+        return f"{self.user_id} opened {self.date}"
