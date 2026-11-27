@@ -1,0 +1,11 @@
+# gitleaks configuration (used by the CI "Secret scan" job).
+# Keeps all default rules; only lock files are skipped, because their package
+# checksums (e.g. Podfile.lock SPEC CHECKSUMS) look like keys to the generic rule.
+# Never allowlist real secret files here: rotate the secret and remove it instead.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Dependency lock files contain checksums, not secrets"
+paths = ['''(^|/)(Podfile|pubspec|Gemfile)\.lock$''']

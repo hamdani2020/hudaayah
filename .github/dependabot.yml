@@ -1,0 +1,67 @@
+# Dependabot: weekly update PRs into `develop` (CI runs on them; review before merging,
+# especially major versions and anything that runs build scripts). Minor/patch updates
+# are grouped per ecosystem to keep the number of PRs small.
+version: 2
+updates:
+  # GitHub Actions (keeps the pinned commit SHAs and their version comments current).
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule: { interval: weekly, day: monday }
+    groups:
+      actions:
+        update-types: [minor, patch]
+
+  # Docker base images (digest-pinned FROM lines).
+  - package-ecosystem: docker
+    directories: [/backend, /infra/nginx]
+    target-branch: develop
+    schedule: { interval: weekly, day: monday }
+    groups:
+      docker-images:
+        update-types: [minor, patch, digest]
+
+  # Images in Compose files (Postgres, certbot).
+  - package-ecosystem: docker-compose
+    directories: [/, /infra/deploy]
+    target-branch: develop
+    schedule: { interval: weekly, day: monday }
+    groups:
+      compose-images:
+        update-types: [minor, patch, digest]
+    ignore:
+      # Postgres major upgrades need a data migration; do them deliberately.
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
+
+  # Backend Python packages (backend/requirements/*.txt).
+  - package-ecosystem: pip
+    directory: /backend
+    target-branch: develop
+    schedule: { interval: weekly, day: monday }
+    groups:
+      python:
+        update-types: [minor, patch]
+
+  # Flutter / Dart packages (mobile/pubspec.yaml + pubspec.lock).
+  - package-ecosystem: pub
+    directory: /mobile
+    target-branch: develop
+    schedule: { interval: weekly, day: monday }
+    groups:
+      flutter:
+        update-types: [minor, patch]
+    ignore:
+      # v23+ needs Android Gradle Plugin 9 / compileSdk 37 (we are on AGP 8.11 / 36).
+      # Remove this once the Android build tools are upgraded.
+      - dependency-name: flutter_local_notifications
+        update-types: ["version-update:semver-major"]
+
+  # fastlane (mobile/android/Gemfile + Gemfile.lock).
+  - package-ecosystem: bundler
+    directory: /mobile/android
+    target-branch: develop
+    schedule: { interval: weekly, day: monday }
+    groups:
+      fastlane:
+        update-types: [minor, patch]
