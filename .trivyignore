@@ -1,9 +1,0 @@
-# Accepted vulnerabilities for the CI "Image scan" job (Trivy).
-# Only add an entry when the issue cannot be fixed yet (e.g. no updated base image)
-# and does not affect Hudaayah. One ID per line, with a reason and a review date:
-#
-#   # libfoo: not used by the app; no Debian fix yet. Review by 2027-01-31.
-#   CVE-2026-12345
-#
-# Prefer fixing: merge the Dependabot update for the base image digest, or bump the
-# Python package in backend/requirements/.

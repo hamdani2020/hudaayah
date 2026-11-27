@@ -67,7 +67,7 @@ jobs:
               - "backend/**"
               - "infra/nginx/**"
               - "infra/deploy/**"
-              - ".trivyignore"
+              - ".trivyignore.yaml"
               - ".github/workflows/ci.yml"
 
   backend:
@@ -318,7 +318,8 @@ jobs:
 
       # Scanned from tar files: the scanner never gets the Docker socket.
       # Fails on HIGH/CRITICAL vulnerabilities that have a fix available. Accepted
-      # exceptions go in .trivyignore with a reason and review date.
+      # exceptions go in .trivyignore.yaml (exact package, statement, expiry date);
+      # --show-suppressed lists them in the log so they stay visible.
       - name: Trivy (backend + nginx)
         run: |
           mkdir -p "$RUNNER_TEMP/scan"
@@ -328,10 +329,11 @@ jobs:
           for img in backend nginx; do
             echo "::group::Trivy $img"
             docker run --rm \
-              -v "$RUNNER_TEMP/scan:/scan:ro" -v "$PWD/.trivyignore:/.trivyignore:ro" \
+              -v "$RUNNER_TEMP/scan:/scan:ro" -v "$PWD/.trivyignore.yaml:/trivyignore.yaml:ro" \
               "$TRIVY_IMAGE" image --input "/scan/$img.tar" \
               --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
-              --ignorefile /.trivyignore --no-progress --exit-code 1 || status=1
+              --ignorefile /trivyignore.yaml --show-suppressed \
+              --no-progress --exit-code 1 || status=1
             echo "::endgroup::"
           done
           exit "$status"

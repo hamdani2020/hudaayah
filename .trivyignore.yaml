@@ -1,0 +1,17 @@
+# Accepted findings for the CI "Image scan" job (Trivy).
+#
+# Only add an entry when a finding cannot be fixed yet AND does not affect Hudaayah.
+# Every entry needs: the exact package (purl), a statement explaining why, and an
+# expiry date. After `expired_at` the finding fails CI again, forcing a re-review.
+# Prefer fixing: merge the Dependabot base-image update, or bump the package.
+
+vulnerabilities:
+  - id: CVE-2025-47273
+    # Not the installed setuptools (84.2.1, fixed). This entry comes from pip's own
+    # SBOM (site-packages/pip/_vendor/bom.cdx.json): pip vendors pkg_resources taken
+    # from setuptools 70.3.0. The CVE is in setuptools' PackageIndex
+    # (setuptools/package_index.py), which pip does not vendor.
+    purls:
+      - "pkg:pypi/setuptools@70.3.0"
+    statement: "pip-vendored pkg_resources only; vulnerable PackageIndex code is not present. Installed setuptools is 84.2.1."
+    expired_at: 2027-03-31

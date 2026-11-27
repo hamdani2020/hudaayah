@@ -47,7 +47,13 @@ job, so new advisories against unchanged dependencies show up too.
 | gitleaks | Remove the secret **and rotate it** (it is in git history). | `.gitleaks.toml` allowlist (paths/regex), with a comment. |
 | pip-audit | Bump the package in `backend/requirements/`. | `pip-audit --ignore-vuln <ID>` in `ci.yml`, with a comment. |
 | osv-scanner | `flutter pub upgrade <pkg>` / `bundle update <gem>`, commit the lock file. | `osv-scanner.toml` next to the lock file (`[[IgnoredVulns]] id = "…" reason = "…"`). |
-| Trivy | Merge the Dependabot base-image update, or bump the Python package. | `.trivyignore`: the ID, a reason and a review date. |
+| Trivy | Merge the Dependabot base-image update, or bump the Python package. | `.trivyignore.yaml`: the ID, the exact package (`purls`), a `statement` and an `expired_at` date (it fails again after that date). Accepted findings are still listed in the CI log (`--show-suppressed`). |
+
+Currently accepted (`.trivyignore.yaml`): **CVE-2025-47273** for
+`pkg:pypi/setuptools@70.3.0`. It is reported from pip's own SBOM
+(`pip/_vendor/bom.cdx.json`), because pip vendors `pkg_resources` from setuptools
+70.3.0. The vulnerable code (`setuptools/package_index.py`) is not vendored, and the
+installed setuptools is 84.2.1. Re-check by 2027-03-31.
 
 No credentials are stored anywhere, in the repo or in GitHub Secrets. Each run
 generates a random Postgres password and Django secret key, masks them in the logs,
