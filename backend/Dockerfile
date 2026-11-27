@@ -7,13 +7,18 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# `apt-get upgrade` pulls Debian security fixes released after the base image was
+# built (e.g. libzstd1 deb13u1).
 RUN apt-get update \
+    && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends build-essential libpq-dev curl \
     && rm -rf /var/lib/apt/lists/*
 
 ARG REQUIREMENTS=development
 COPY requirements/ ./requirements/
-RUN pip install --upgrade pip && pip install -r requirements/${REQUIREMENTS}.txt
+# The base image ships setuptools 70.3.0 (CVE-2025-47273); upgrade it with pip.
+RUN pip install --upgrade pip "setuptools>=78.1.1" \
+    && pip install -r requirements/${REQUIREMENTS}.txt
 
 COPY . .
 
