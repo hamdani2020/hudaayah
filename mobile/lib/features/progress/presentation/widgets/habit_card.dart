@@ -107,24 +107,10 @@ class _Tag extends StatelessWidget {
         color: AppTheme.surfaceContainer.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppTheme.secondaryFixed,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label.toUpperCase(),
-            style: theme.textTheme.labelSmall
-                ?.copyWith(color: AppTheme.onPrimaryContainer),
-          ),
-        ],
+      child: Text(
+        label.toUpperCase(),
+        style: theme.textTheme.labelSmall
+            ?.copyWith(color: AppTheme.onPrimaryContainer),
       ),
     );
   }

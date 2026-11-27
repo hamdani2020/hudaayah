@@ -3,7 +3,7 @@
 #   docker compose exec web python manage.py <cmd>
 services:
   db:
-    image: postgres:16
+    image: postgres:16@sha256:07abc3f43c9395b0bdbbab36bc25ddb0e8d83cd4fcafb5fb7d6abe14ff156dd8
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -27,20 +29,23 @@ class SignInScreen extends ConsumerWidget {
     final isLoading = authState.isLoading;
 
     ref.listen(authControllerProvider, (prev, next) {
-      next.whenOrNull(error: (err, _) {
-        final String message;
-        if (err is ApiException) {
-          message = err.message;
-        } else if (err is GoogleSignInException) {
-          message = 'Google sign-in: ${err.code.name}'
-              '${err.description != null ? ' — ${err.description}' : ''}';
-        } else {
-          message = 'Sign-in failed: $err';
-        }
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(message)));
-      });
+      next.whenOrNull(
+        error: (err, _) {
+          final String message;
+          if (err is ApiException) {
+            message = err.message;
+          } else if (err is GoogleSignInException) {
+            message =
+                'Google sign-in: ${err.code.name}'
+                '${err.description != null ? ' — ${err.description}' : ''}';
+          } else {
+            message = 'Sign-in failed: $err';
+          }
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(message)));
+        },
+      );
     });
 
     return PopScope(
@@ -49,61 +54,74 @@ class SignInScreen extends ConsumerWidget {
         if (!didPop) context.go('/onboarding');
       },
       child: Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          children: [
-            _TopBar(onBack: () => context.go('/onboarding')),
-            const SizedBox(height: 32),
-            const Center(child: _Emblem()),
-            const SizedBox(height: 24),
-            Text('Welcome to Hudaayah',
-                style: theme.textTheme.displaySmall, textAlign: TextAlign.center),
-            const SizedBox(height: 10),
-            Text(
-              'Save your reading streaks and sync your Quran learning progress '
-              'seamlessly across devices.',
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 36),
-            AuthProviderButton(
-              leading: isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const _GoogleGlyph(),
-              label: 'Continue with Google',
-              onPressed: isLoading
-                  ? null
-                  : () => ref.read(authControllerProvider.notifier).signInWithGoogle(),
-            ),
-            const SizedBox(height: 12),
-            // Apple Sign-In is not built yet; hide the placeholder on Android.
-            if (defaultTargetPlatform != TargetPlatform.android)
-              const AuthProviderButton(
-                leading: Icon(Icons.apple, size: 22, color: AppTheme.onSurface),
-                label: 'Continue with Apple (coming soon)',
-                onPressed: null, // Apple — wired in a later task.
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            children: [
+              _TopBar(onBack: () => context.go('/onboarding')),
+              const SizedBox(height: 32),
+              Text(
+                'Welcome to Hudaayah',
+                style: theme.textTheme.displaySmall,
+                textAlign: TextAlign.center,
               ),
-            const SizedBox(height: 28),
-            const InfoCard(
-              icon: Icons.lock_outline,
-              title: 'Sacred Data Sanctuary',
-              body: 'Your data is private and your spiritual journey is sacred. '
-                  'No ads, no commercial tracking.',
-            ),
-            const SizedBox(height: 24),
-            const _LegalLinks(),
-            const SizedBox(height: 16),
-            Center(child: Text(AppConfig.qfAttribution,
-                style: theme.textTheme.labelSmall)),
-          ],
+              const SizedBox(height: 10),
+              Text(
+                'Save your reading streaks and sync your Quran learning progress '
+                'seamlessly across devices.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 36),
+              AuthProviderButton(
+                leading: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const _GoogleGlyph(),
+                label: 'Continue with Google',
+                onPressed: isLoading
+                    ? null
+                    : () => ref
+                          .read(authControllerProvider.notifier)
+                          .signInWithGoogle(),
+              ),
+              const SizedBox(height: 12),
+              // Apple Sign-In is not built yet; hide the placeholder on Android.
+              if (defaultTargetPlatform != TargetPlatform.android)
+                const AuthProviderButton(
+                  leading: Icon(
+                    Icons.apple,
+                    size: 22,
+                    color: AppTheme.onSurface,
+                  ),
+                  label: 'Continue with Apple (coming soon)',
+                  onPressed: null, // Apple — wired in a later task.
+                ),
+              const SizedBox(height: 28),
+              const InfoCard(
+                icon: Icons.lock_outline,
+                title: 'Sacred Data Sanctuary',
+                body:
+                    'Your data is private and your spiritual journey is sacred. '
+                    'No ads, no commercial tracking.',
+              ),
+              const SizedBox(height: 24),
+              const _LegalLinks(),
+              const SizedBox(height: 16),
+              Center(
+                child: Text(
+                  AppConfig.qfAttribution,
+                  style: theme.textTheme.labelSmall,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -125,8 +143,7 @@ class _LegalLinksState extends State<_LegalLinks> {
   @override
   void initState() {
     super.initState();
-    _terms = TapGestureRecognizer()
-      ..onTap = () => context.push('/legal/terms');
+    _terms = TapGestureRecognizer()..onTap = () => context.push('/legal/terms');
     _privacy = TapGestureRecognizer()
       ..onTap = () => context.push('/legal/privacy');
   }
@@ -151,9 +168,17 @@ class _LegalLinksState extends State<_LegalLinks> {
         style: style,
         children: [
           const TextSpan(text: "By continuing, you agree to Hudaayah's "),
-          TextSpan(text: 'Terms of Service', style: linkStyle, recognizer: _terms),
+          TextSpan(
+            text: 'Terms of Service',
+            style: linkStyle,
+            recognizer: _terms,
+          ),
           const TextSpan(text: ' and acknowledge our '),
-          TextSpan(text: 'Privacy Policy', style: linkStyle, recognizer: _privacy),
+          TextSpan(
+            text: 'Privacy Policy',
+            style: linkStyle,
+            recognizer: _privacy,
+          ),
           const TextSpan(text: '.'),
         ],
       ),
@@ -162,48 +187,17 @@ class _LegalLinksState extends State<_LegalLinks> {
   }
 }
 
-/// Top row: a circular back button, a centered "Account Setup" pill, and a help
-/// icon (design-mapping §2 screen 02).
+/// Top row: a circular back button and a help icon.
 class _TopBar extends StatelessWidget {
   const _TopBar({required this.onBack});
   final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Row(
       children: [
         _CircleButton(icon: Icons.arrow_back, onTap: onBack),
-        Expanded(
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.secondaryContainer,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'ACCOUNT SETUP',
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: AppTheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+        const Spacer(),
         _CircleButton(icon: Icons.help_outline, onTap: () {}),
       ],
     );
@@ -233,86 +227,50 @@ class _CircleButton extends StatelessWidget {
   }
 }
 
-/// Stacked rotated tinted tiles behind a `surface-container-lowest` emblem tile
-/// (the HTML emblem.png is not an app asset — use an [Icons.auto_awesome] glyph).
-class _Emblem extends StatelessWidget {
-  const _Emblem();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 88,
-      height: 88,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Transform.rotate(
-            angle: -0.18,
-            child: Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryFixed,
-                borderRadius: BorderRadius.circular(AppTheme.radius2xl),
-              ),
-            ),
-          ),
-          Transform.rotate(
-            angle: 0.14,
-            child: Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppTheme.secondaryFixed,
-                borderRadius: BorderRadius.circular(AppTheme.radius2xl),
-              ),
-            ),
-          ),
-          Container(
-            width: 64,
-            height: 64,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceContainerLowest,
-              borderRadius: BorderRadius.circular(AppTheme.radiusXl),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primary.withValues(alpha: 0.08),
-                  blurRadius: 12,
-                ),
-              ],
-            ),
-            child: const Icon(Icons.auto_awesome,
-                size: 30, color: AppTheme.secondaryContainer),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Small painted Google "G" glyph stand-in, themed. Kept simple.
+/// Multi-colour Google "G" (brand colours), drawn with arcs.
 class _GoogleGlyph extends StatelessWidget {
   const _GoogleGlyph();
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 22,
-      height: 22,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-      ),
-      child: Text(
-        'G',
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppTheme.primary,
-              fontWeight: FontWeight.w700,
-            ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const SizedBox(
+    width: 22,
+    height: 22,
+    child: CustomPaint(painter: _GooglePainter()),
+  );
 }
 
+class _GooglePainter extends CustomPainter {
+  const _GooglePainter();
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final stroke = w * 0.2;
+    final c = Offset(w / 2, w / 2);
+    final r = (w - stroke) / 2;
+    final rect = Rect.fromCircle(center: c, radius: r);
+    double rad(double d) => d * math.pi / 180;
+    void arc(Color color, double start, double sweep) {
+      canvas.drawArc(
+        rect,
+        rad(start),
+        rad(sweep),
+        false,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = stroke,
+      );
+    }
+
+    arc(const Color(0xFFEA4335), 200, 115); // red, top
+    arc(const Color(0xFFFBBC05), 140, 62); // yellow, left
+    arc(const Color(0xFF34A853), 45, 97); // green, bottom
+    arc(const Color(0xFF4285F4), 0, 47); // blue, lower right
+    canvas.drawRect(
+      Rect.fromLTRB(w / 2, c.dy - stroke / 2, w - 0.5, c.dy + stroke / 2),
+      Paint()..color = const Color(0xFF4285F4),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter old) => false;
+}

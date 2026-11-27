@@ -2,7 +2,8 @@
 # Adds openssl (temporary self-signed cert on first boot) and gettext (envsubst for the
 # config template). The config template and entrypoint are baked in; SERVER_NAME is
 # supplied at runtime via the environment.
-FROM nginx:1.27-alpine
+# Pinned to an immutable digest (multi-arch index). Dependabot proposes updates.
+FROM nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
 
 RUN apk add --no-cache openssl gettext
 

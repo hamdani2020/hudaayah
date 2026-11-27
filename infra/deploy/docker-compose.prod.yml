@@ -19,7 +19,8 @@ name: hudaayah
 
 services:
   db:
-    image: postgres:16
+    # Images are pinned to immutable digests; Dependabot proposes updates.
+    image: postgres:16@sha256:07abc3f43c9395b0bdbbab36bc25ddb0e8d83cd4fcafb5fb7d6abe14ff156dd8
     restart: unless-stopped
     # env_file injects POSTGRES_DB/USER/PASSWORD into the container; no compose-level
     # interpolation here (compose resolves ${...} from its own env, not env_file).
@@ -81,7 +82,8 @@ services:
   # It also issues certs for the extra web hosts if they are still missing (see
   # infra/certbot/renew-loop.sh), so a DNS record added after a deploy self-heals.
   certbot:
-    image: certbot/certbot:latest
+    # Was `latest`; now a named version plus digest (it has access to the TLS keys).
+    image: certbot/certbot:v5.10.0@sha256:c5698da859429ccee0fcc299a8000368198222d1f9e789ab6e388b491e8ce06d
     restart: unless-stopped
     environment:
       LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:-}

@@ -50,3 +50,51 @@ docker compose exec web python -m pytest -q
 # mobile
 cd mobile && flutter analyze && flutter test
 ```
+
+## Workflow security rules
+
+Applies to `ci.yml`, `deploy.yml` and `mobile-release.yml`.
+
+- **Token permissions:** `permissions: {}` at the top of every workflow; each job
+  lists only what it needs (`contents: read`, plus `pull-requests: read` for the
+  change filter and `id-token: write` for the AWS deploy).
+- **Checkout:** always `persist-credentials: false`, so the token is not left in
+  `.git/config` for later steps.
+- **Pinned Actions:** every `uses:` is a full commit SHA with the version in a comment,
+  e.g. `actions/checkout@11d5960… # v4.4.0`. Dependabot updates both.
+- **Pinned images:** `python`, `nginx`, `postgres` and `certbot` are pinned to digests
+  in `backend/Dockerfile`, `infra/nginx/Dockerfile`, both Compose files and `ci.yml`.
+- **Locked dependencies:** CI and releases install from `pubspec.lock`
+  (`flutter pub get --enforce-lockfile`) and `mobile/android/Gemfile.lock` (frozen by
+  `ruby/setup-ruby`). Python requirements pin top-level versions only (full lock with
+  hashes is a later step).
+- **PR code never sees secrets:** CI uses `pull_request`, never `pull_request_target`.
+  Secrets exist only in the deploy/release environments.
+- **No untrusted values in scripts:** inputs and event data go through `env:` and are
+  validated (e.g. the deploy ref must look like a branch, tag or SHA), never written as
+  `${{ … }}` inside `run:`.
+
+### Before adding a new third-party Action
+Prefer official (`actions/*`, `docker/*`, vendor-owned) Actions. Check the repo's
+owner, activity and permissions it needs, pin it to a commit SHA, and give its job the
+smallest `permissions:` block.
+
+### Reviewing Dependabot PRs
+Dependabot opens weekly PRs into `develop` (minor/patch grouped). CI runs on them.
+Read the changelog before merging majors, Actions updates, and anything that runs
+code at install/build time (Gradle plugins, gems, pip packages with build steps).
+Postgres majors and `flutter_local_notifications` majors are ignored on purpose (see
+`.github/dependabot.yml`).
+
+## GitHub settings checklist (owner, one-time)
+
+1. **Settings → Environments** → for `production`, `play-testing` and
+   `play-production`: **Deployment branches and tags → Selected branches → `main`**.
+   Without this, a manual run on another branch could deploy or sign unreviewed code.
+2. **Settings → Branches → ruleset for `main`:** require a pull request, require the
+   **CI passed** check, block force pushes.
+3. **Settings → Code security:** enable **Dependabot alerts** and **Dependabot security
+   updates**; enable **Secret scanning** and **Push protection** if your plan offers them.
+4. **Settings → Actions → General:** "Workflow permissions" = **Read repository
+   contents** (default token read-only); leave "Allow GitHub Actions to create and
+   approve pull requests" off.
