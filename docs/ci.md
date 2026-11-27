@@ -21,8 +21,33 @@ merge to main ──► deploy.yml (backend, if backend/** changed)
 | Job | Runs when | Checks |
 | --- | --- | --- |
 | Backend tests | `backend/**` or `docker-compose.yml` changed | Builds `backend/Dockerfile` (development requirements), a throwaway Postgres 16 with per-run credentials, `makemigrations --check` (no missing migrations), `manage.py check`, `pytest` |
+| Backend tests (cont.) | same | `check --deploy --fail-level WARNING` with the **production** settings |
 | Mobile checks | `mobile/**` changed | `changelog.json` has an entry for the pubspec version, `flutter analyze`, `flutter test`, Android debug build |
+| Secret scan | always | gitleaks over the PR's commits (whole history on manual/scheduled runs); fails on any finding |
+| Dependency audit | backend or mobile changed | `pip-audit` (backend requirements, full dependency tree); `osv-scanner` (`pubspec.lock`, `Gemfile.lock`); fails on known vulnerabilities |
+| Image scan | backend, `infra/nginx` or `infra/deploy` changed | Builds the **production** backend image and the nginx image; Trivy fails on HIGH/CRITICAL vulnerabilities that have a fix |
 | CI passed | always | Green when every job that ran succeeded (skipped jobs are fine) |
+
+Manual runs and the weekly scheduled run (Mondays 06:00 UTC, on `main`) run every
+job, so new advisories against unchanged dependencies show up too.
+
+### Scanners
+- Scanners run as **containers pinned by digest** (`GITLEAKS_IMAGE`, `OSV_SCANNER_IMAGE`,
+  `TRIVY_IMAGE` at the top of `ci.yml`), not through third-party scanner Actions. In
+  March 2026 `aquasecurity/trivy-action` tags and some Trivy images were hijacked
+  (GHSA-69fq-xp46-6x23); digest-pinned images were not affected. Trivy is 0.76.2 from
+  GHCR (post-incident, immutable releases).
+- Trivy scans image **tar files**; it never gets the Docker socket.
+- Dependabot does not update these three digests (they live in workflow `env`). Check
+  for new releases every month or so, resolve the new digest, and update `ci.yml`.
+
+### When a scan fails
+| Scanner | Fix | Accept (only if it truly does not apply) |
+| --- | --- | --- |
+| gitleaks | Remove the secret **and rotate it** (it is in git history). | `.gitleaks.toml` allowlist (paths/regex), with a comment. |
+| pip-audit | Bump the package in `backend/requirements/`. | `pip-audit --ignore-vuln <ID>` in `ci.yml`, with a comment. |
+| osv-scanner | `flutter pub upgrade <pkg>` / `bundle update <gem>`, commit the lock file. | `osv-scanner.toml` next to the lock file (`[[IgnoredVulns]] id = "…" reason = "…"`). |
+| Trivy | Merge the Dependabot base-image update, or bump the Python package. | `.trivyignore`: the ID, a reason and a review date. |
 
 No credentials are stored anywhere, in the repo or in GitHub Secrets. Each run
 generates a random Postgres password and Django secret key, masks them in the logs,

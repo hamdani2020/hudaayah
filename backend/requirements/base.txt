@@ -1,9 +1,11 @@
 # Core backend — pinned for reproducible Docker builds
-Django==5.1.4
-djangorestframework==3.15.2
+# Django 5.2 is the LTS release (5.1 is out of support). Security updates come via
+# Dependabot; CI's pip-audit fails on known vulnerabilities.
+Django==5.2.19
+djangorestframework==3.18.3
 psycopg[binary]==3.2.3
 django-environ==0.11.2
-requests==2.32.3
+requests==2.34.2
 gunicorn==23.0.0
 whitenoise==6.12.0
 

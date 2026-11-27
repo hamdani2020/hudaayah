@@ -1,7 +1,7 @@
 -r base.txt
 
 # Dev + test tooling
-pytest==8.3.4
-pytest-django==4.9.0
+pytest==9.2.0
+pytest-django==4.14.0
 responses==0.25.3
 ruff==0.8.4
